@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Unique Techno — Customer</title><link rel="stylesheet" href="/static/css/customer.css?v=20260830-booking-typography-final"><style>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Unique Techno — Customer</title><link rel="stylesheet" href="/static/css/customer.css?v=profile-otp-popup-20260903"><style>
 /* Unique Techno — Booking Status Timeline */
 .ut-booking-timeline{margin:20px 0;padding:18px;border:1px solid #e5e7eb;border-radius:14px;background:#fff}
 .ut-booking-timeline-title{font-size:18px;font-weight:700;margin-bottom:16px}
@@ -273,6 +273,18 @@ body.customer-auth #home.screen.on ~ #accountFab{display:block!important}
 <style id="auth-flow-styles">
 .auth-field{margin-bottom:12px}.auth-field .auth-label{display:block;margin-bottom:6px}.auth-form textarea,.auth-form input{width:100%;box-sizing:border-box}.auth-form textarea{min-height:76px;resize:vertical;padding:13px 14px;border:1px solid #d6e0eb;border-radius:12px;font:inherit;color:#132b49;background:#fff}.auth-field .auth-label span{font-size:9px;color:#8a98a8;font-weight:700}.auth-step-note{font-size:12px;line-height:1.55;color:#718198;margin:-2px 0 14px}.auth-success-note{background:#f2f8ff;border:1px solid #d8e9fb;color:#174d80;border-radius:12px;padding:10px 12px;font-size:11px;line-height:1.45;margin-bottom:13px}
 </style>
+</style>
+<style>
+/* Profile contact-change verification popup */
+.ut-modal{display:none;position:fixed;inset:0;z-index:10050;background:rgba(8,24,45,.48);padding:20px;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+.ut-modal[style*="display: flex"],.ut-modal.open{display:flex !important}
+.ut-modal-card{width:min(440px,calc(100vw - 40px));max-height:90vh;overflow:auto;background:#fff;border:1px solid #e3e8ef;border-radius:18px;padding:22px;box-shadow:0 24px 70px rgba(0,0,0,.22);position:relative}
+.ut-modal-card h3{margin:6px 0 8px;font-size:22px;color:#13233d}
+.ut-modal-card label{display:block;font-size:12px;font-weight:700;margin:13px 0 6px;color:#24364f}
+.ut-modal-card input{width:100%;box-sizing:border-box;padding:12px 13px;border:1px solid #d5dde7;border-radius:10px;font-size:14px;outline:none}
+.ut-modal-card input:focus{border-color:#2475e8;box-shadow:0 0 0 3px rgba(36,117,232,.10)}
+.ut-modal-close{position:absolute;right:12px;top:12px;width:34px;height:34px;border:0;border-radius:9px;background:#eef2f6;cursor:pointer;font-size:20px;line-height:1}
+@media(max-width:600px){.ut-modal{padding:12px}.ut-modal-card{width:100%;padding:18px;border-radius:16px}}
 </style>
 </head><body>
 <section id="login" class="screen on">
