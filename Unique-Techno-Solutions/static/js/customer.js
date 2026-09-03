@@ -533,13 +533,76 @@ async function loadAddresses(){if(!customer?.id)return;try{window.customerAddres
 function renderAddresses(){const b=document.getElementById('addressBookList');if(!b)return;const rows=window.customerAddresses||[];if(!rows.length){b.innerHTML='<div class="address-empty">No saved addresses yet. Add your first service address.</div>';return}b.innerHTML=rows.map(r=>`<div class="address-card"><div class="address-card-top"><div><b>${esc(r.label||'Address')}</b>${r.is_default?'<span class="address-default">DEFAULT</span>':''}</div><div class="address-actions"><button type="button" onclick="openAddressModal(${r.id})">Edit</button><button type="button" onclick="deleteAddress(${r.id})">Delete</button></div></div><div class="address-meta">${esc(r.area||'')}${r.pincode?' • '+esc(r.pincode):''}</div><p>${esc(r.address||'')}</p></div>`).join('')}
 async function saveAddress(){try{const id=document.getElementById('addressEditId').value;const payload={label:document.getElementById('addressLabel').value.trim()||'Address',area:document.getElementById('addressArea').value.trim(),pincode:document.getElementById('addressPincode').value.trim(),address:document.getElementById('addressFull').value.trim(),is_default:document.getElementById('addressDefault').checked};if(!payload.address)throw Error('Full address is required.');if(payload.pincode&&!/^\d{6}$/.test(payload.pincode))throw Error('Enter a valid 6-digit pincode.');window.customerAddresses=await api(id?'/api/customer/'+customer.id+'/addresses/'+id:'/api/customer/'+customer.id+'/addresses',{method:id?'PUT':'POST',body:JSON.stringify(payload)});closeAddressModal();renderAddresses();toast('Address saved successfully.')}catch(e){alert(e.message)}}
 async function deleteAddress(id){if(!confirm('Delete this saved address?'))return;try{await api('/api/customer/'+customer.id+'/addresses/'+id,{method:'DELETE'});await loadAddresses();toast('Address deleted.')}catch(e){alert(e.message)}}
-async function loadNotifications(){if(!customer?.id)return;try{notifications=await api('/api/customer/'+customer.id+'/notifications');renderNotifications();updateNotificationBadges()}catch(e){document.getElementById('notificationList').innerHTML='<div class="notification-empty">No notifications.</div>'}}
-function toggleNotificationDetails(id){const card=document.querySelector('.notification[data-notification-id="'+id+'"]');if(!card)return;const wasOpen=card.classList.contains('expanded');document.querySelectorAll('#notificationList .notification.expanded').forEach(x=>x.classList.remove('expanded'));if(!wasOpen)card.classList.add('expanded')}
-function renderNotifications(){const box=document.getElementById('notificationList');if(!box)return;if(!notifications.length){box.innerHTML='<div class="notification-empty">No notifications.</div>';return}box.innerHTML=notifications.map(n=>{const unread=!n.is_read;const booking=n.booking_id?`<div class="notification-detail-row"><small>Booking</small><b>${esc(n.booking_id)}</b></div>`:'';return `<div class="notification ${unread?'unread':''}" data-notification-id="${n.id}" onclick="toggleNotificationDetails(${n.id})"><div class="notification-summary"><div class="notification-summary-icon">${unread?'●':'✓'}</div><div class="notification-summary-copy"><b>${esc(n.title)}</b><span>${esc(n.message)}</span><time>${esc(n.created_at||'')}</time></div><span class="notification-chevron">⌄</span></div><div class="notification-details"><div class="notification-detail-message">${esc(n.message)}</div><div class="notification-detail-grid">${booking}<div class="notification-detail-row"><small>Received</small><b>${esc(n.created_at||'—')}</b></div><div class="notification-detail-row"><small>Status</small><b>${unread?'Unread':'Read'}</b></div></div><div class="notification-detail-actions">${unread?`<button type="button" class="notification-mark-read" onclick="event.stopPropagation();markNotificationRead(${n.id})">✓ Mark as read</button>`:`<span class="notification-read-state">✓ Read</span>`}</div></div></div>`}).join('')}
-async function markNotificationRead(id){if(!customer?.id||!id)return;try{const result=await api('/api/customer/'+customer.id+'/notifications/read',{method:'POST',body:JSON.stringify({notification_id:id})});if(result?.ok===false||result?.updated===0)throw Error('Notification could not be marked as read.');const n=notifications.find(x=>Number(x.id)===Number(id));if(n)n.is_read=1;renderNotifications();updateNotificationBadges();if(typeof renderDashboard==='function')renderDashboard();}catch(e){alert(e?.message||'Could not mark notification as read.')}}
-async function markAllNotificationsRead(){if(!customer?.id)return;try{const result=await api('/api/customer/'+customer.id+'/notifications/read-all',{method:'POST',body:JSON.stringify({})});if(result?.ok===false)throw Error('Could not mark notifications as read.');notifications.forEach(n=>n.is_read=1);renderNotifications();updateNotificationBadges();if(typeof renderDashboard==='function')renderDashboard();toast('All notifications marked as read.');}catch(e){alert(e?.message||'Could not mark notifications as read.')}}
+async function loadNotifications(){if(!customer?.id)return;try{notifications=await api('/api/customer/'+customer.id+'/notifications');renderNotifications();updateNotificationBadges();updateFloatingNotificationPanel()}catch(e){document.getElementById('notificationList').innerHTML='<div class="notification-empty">No notifications.</div>'}}
+function renderNotifications(){
+  const box=document.getElementById('notificationList');
+  if(!box)return;
+  if(!notifications.length){box.innerHTML='<div class="notification-empty">No notifications.</div>';return}
+  box.innerHTML=notifications.map(n=>`<article class="notification ${n.is_read?'read':'unread'}" data-notification-id="${n.id}">
+    <button type="button" class="notification-main" aria-expanded="false">
+      <span class="notification-status-dot"></span>
+      <span class="notification-copy"><b>${esc(n.title)}</b><span>${esc(n.message)}</span><small>${esc(n.created_at||'')}</small></span>
+      <span class="notification-chevron">⌄</span>
+    </button>
+    <div class="notification-details" hidden>
+      <div class="notification-detail-message">${esc(n.message)}</div>
+      <div class="notification-detail-meta"><span>Received</span><b>${esc(n.created_at||'—')}</b></div>
+      <div class="notification-detail-meta"><span>Status</span><b class="notification-read-state">${n.is_read?'✓ Read':'● Unread'}</b></div>
+      <button type="button" class="notification-mark-read" data-mark-read="${n.id}" ${n.is_read?'disabled':''}>${n.is_read?'✓ Read':'✓ Mark as read'}</button>
+    </div>
+  </article>`).join('');
+  updateFloatingNotificationPanel();
+}
+async function markNotificationRead(id){
+  if(!customer?.id||!id)return false;
+  try{
+    await api('/api/customer/'+customer.id+'/notifications/read',{method:'POST',body:JSON.stringify({notification_id:id})});
+    const n=notifications.find(x=>Number(x.id)===Number(id));
+    if(n)n.is_read=1;
+    renderNotifications();
+    updateNotificationBadges();
+    if(typeof renderDashboard==='function')renderDashboard();
+    return true;
+  }catch(e){alert(e?.message||'Could not mark notification as read.');return false}
+}
+async function markAllNotificationsRead(){if(!customer?.id)return;try{await api('/api/customer/'+customer.id+'/notifications/read-all',{method:'POST',body:JSON.stringify({})});notifications.forEach(n=>n.is_read=1);renderNotifications();updateNotificationBadges();updateFloatingNotificationPanel();if(typeof renderDashboard==='function')renderDashboard();toast('All notifications marked as read.');}catch(e){alert(e?.message||'Could not mark notifications as read.')}}
+function updateFloatingNotificationPanel(){
+  const list=document.getElementById('floatingNotificationList');
+  if(!list)return;
+  const recent=notifications.slice(0,6);
+  list.innerHTML=recent.length?recent.map(n=>`<button type=\"button\" class=\"floating-notification-item ${n.is_read?'read':'unread'}\" data-floating-notification=\"${n.id}\"><span class=\"floating-notification-dot\"></span><span><b>${esc(n.title)}</b><small>${esc(n.message)}</small></span></button>`).join(''):'<div class=\"floating-notification-empty\">No new notifications</div>';
+}
+function toggleFloatingNotifications(){
+  const p=document.getElementById('floatingNotificationPanel'); if(!p)return;
+  if(typeof closeAccountMenu==='function')closeAccountMenu();
+  p.classList.toggle('open');
+  p.setAttribute('aria-hidden',p.classList.contains('open')?'false':'true');
+}
+function closeFloatingNotifications(){const p=document.getElementById('floatingNotificationPanel');if(p){p.classList.remove('open');p.setAttribute('aria-hidden','true')}}
 function updateNotificationBadges(){const unread=notifications.filter(n=>!n.is_read).length;const count=document.getElementById('notifCount');if(count)count.textContent=unread||'';const side=document.getElementById('sideNotifCount');if(side){side.textContent=unread||'';side.classList.toggle('has',unread>0)}const fab=document.getElementById('floatingNotifCount');if(fab){fab.textContent=unread||'';fab.style.display=unread?'inline-flex':'none'}}
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',2200)}
+document.addEventListener('click',async function(e){
+  const main=e.target.closest('.notification-main');
+  if(main){
+    const card=main.closest('.notification');
+    if(!card)return;
+    const details=card.querySelector('.notification-details');
+    const open=card.classList.toggle('expanded');
+    main.setAttribute('aria-expanded',String(open));
+    if(details)details.hidden=!open;
+    card.parentElement?.querySelectorAll('.notification.expanded').forEach(x=>{if(x!==card){x.classList.remove('expanded');const m=x.querySelector('.notification-main');const d=x.querySelector('.notification-details');if(m)m.setAttribute('aria-expanded','false');if(d)d.hidden=true;}});
+    return;
+  }
+  const rb=e.target.closest('[data-mark-read]');
+  if(rb){e.preventDefault();e.stopPropagation();await markNotificationRead(Number(rb.dataset.markRead));return;}
+  const fb=e.target.closest('[data-floating-notification]');
+  if(fb){const id=Number(fb.dataset.floatingNotification);await markNotificationRead(id);closeFloatingNotifications();show('notifications');loadNotifications();return;}
+  const f=e.target.closest('#floatingNotifBtn');
+  if(f){e.preventDefault();e.stopPropagation();toggleFloatingNotifications();return;}
+  const panel=document.getElementById('floatingNotificationPanel');
+  if(panel&&!panel.contains(e.target))closeFloatingNotifications();
+});
+
 async function initCustomerAuth(){try{const d=await api('/api/customer/session');if(d.customer){customer=d.customer;document.body.classList.add('customer-auth');await Promise.all([loadServices(),loadOffers(),loadHistory(),loadProfile(),loadNotifications()]);show('home');return}}catch(e){} document.body.classList.remove('customer-auth');show('login')}
 initCustomerAuth();
 
