@@ -269,6 +269,7 @@ body.customer-auth #home.screen.on ~ #accountFab{display:block!important}
 .account-fab-avatar{width:38px!important;height:38px!important;border-radius:10px!important}
 .account-menu{top:50px!important}
 @media(max-width:760px){.account-fab{top:10px!important;right:12px!important}.account-fab-btn{width:42px!important;height:42px!important}.account-fab-avatar{width:36px!important;height:36px!important}}
+</style>
 
 <style id="auth-flow-styles">
 .auth-field{margin-bottom:12px}.auth-field .auth-label{display:block;margin-bottom:6px}.auth-form textarea,.auth-form input{width:100%;box-sizing:border-box}.auth-form textarea{min-height:76px;resize:vertical;padding:13px 14px;border:1px solid #d6e0eb;border-radius:12px;font:inherit;color:#132b49;background:#fff}.auth-field .auth-label span{font-size:9px;color:#8a98a8;font-weight:700}.auth-step-note{font-size:12px;line-height:1.55;color:#718198;margin:-2px 0 14px}.auth-success-note{background:#f2f8ff;border:1px solid #d8e9fb;color:#174d80;border-radius:12px;padding:10px 12px;font-size:11px;line-height:1.45;margin-bottom:13px}
@@ -285,6 +286,18 @@ body.customer-auth #home.screen.on ~ #accountFab{display:block!important}
 .ut-modal-card input:focus{border-color:#2475e8;box-shadow:0 0 0 3px rgba(36,117,232,.10)}
 .ut-modal-close{position:absolute;right:12px;top:12px;width:34px;height:34px;border:0;border-radius:9px;background:#eef2f6;cursor:pointer;font-size:20px;line-height:1}
 @media(max-width:600px){.ut-modal{padding:12px}.ut-modal-card{width:100%;padding:18px;border-radius:16px}}
+</style>
+<style id="floating-controls-no-overlap">
+/* Keep Notification and My Account controls separate on the dashboard. */
+.notification-fab{right:92px!important;top:14px!important;z-index:1200!important}
+.notification-fab .floating-notification-panel{right:50px!important;top:58px!important}
+.account-fab{right:28px!important;top:14px!important;z-index:1201!important}
+.account-menu{top:50px!important}
+@media(max-width:700px){
+  .notification-fab{right:66px!important;top:10px!important}
+  .notification-fab .floating-notification-panel{right:0!important;top:52px!important;width:min(350px,calc(100vw - 80px))!important}
+  .account-fab{right:12px!important;top:10px!important}
+}
 </style>
 </head><body>
 <section id="login" class="screen on">

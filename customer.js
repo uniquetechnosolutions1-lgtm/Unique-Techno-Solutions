@@ -745,7 +745,7 @@ function updateAccountControl(){
   if(n)n.textContent=name; if(p)p.textContent=customer?.phone||'My Account';
   const pa=document.getElementById('profileAvatar'); if(pa){pa.innerHTML=photo?`<img src="${photo}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:initials}
 }
-function toggleAccountMenu(){const m=document.getElementById('accountMenu');if(!m)return;m.classList.toggle('open');m.setAttribute('aria-hidden',m.classList.contains('open')?'false':'true');updateAccountControl()}
+function toggleAccountMenu(){const m=document.getElementById('accountMenu');if(!m)return;if(typeof closeFloatingNotifications==='function')closeFloatingNotifications();m.classList.toggle('open');m.setAttribute('aria-hidden',m.classList.contains('open')?'false':'true');updateAccountControl()}
 function closeAccountMenu(){const m=document.getElementById('accountMenu');if(m){m.classList.remove('open');m.setAttribute('aria-hidden','true')}}
 function openAccountProfile(){closeAccountMenu();show('profile','profile');loadProfile();setTimeout(()=>document.getElementById('pName')?.focus(),120)}
 function triggerProfilePhoto(){closeAccountMenu();document.getElementById('profilePhotoInput')?.click()}
