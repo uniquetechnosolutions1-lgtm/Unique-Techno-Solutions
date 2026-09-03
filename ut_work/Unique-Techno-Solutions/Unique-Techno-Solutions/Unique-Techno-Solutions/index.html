@@ -1,0 +1,1022 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Unique Techno — Customer</title><link rel="stylesheet" href="/static/css/customer.css?v=profile-otp-popup-20260903"><style>
+/* Unique Techno — Booking Status Timeline */
+.ut-booking-timeline{margin:20px 0;padding:18px;border:1px solid #e5e7eb;border-radius:14px;background:#fff}
+.ut-booking-timeline-title{font-size:18px;font-weight:700;margin-bottom:16px}
+.ut-timeline-track{display:flex;align-items:flex-start;gap:0;overflow-x:auto;padding:6px 2px 10px}
+.ut-timeline-step{min-width:145px;position:relative;text-align:center;font-size:14px;color:#6b7280}
+.ut-timeline-step:not(:last-child)::after{content:"";position:absolute;top:15px;left:calc(50% + 16px);right:calc(-50% + 16px);height:2px;background:#d1d5db}
+.ut-timeline-dot{width:30px;height:30px;border-radius:50%;margin:0 auto 9px;display:flex;align-items:center;justify-content:center;background:#e5e7eb;color:#6b7280;font-weight:700;position:relative;z-index:1}
+.ut-timeline-step.done{color:#111827;font-weight:600}
+.ut-timeline-step.done .ut-timeline-dot{background:#16a34a;color:#fff}
+.ut-timeline-step.current{color:#111827;font-weight:700}
+.ut-timeline-step.current .ut-timeline-dot{background:#2563eb;color:#fff;box-shadow:0 0 0 5px rgba(37,99,235,.12)}
+.ut-timeline-step.done:not(:last-child)::after{background:#16a34a}
+@media(max-width:600px){.ut-timeline-step{min-width:125px;font-size:13px}}
+</style>
+<style>
+.ut-track-browser{margin:0 0 18px;padding:18px;border:1px solid #e3e7ec;border-radius:16px;background:#fff}
+.ut-track-search-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ut-track-search-row input{flex:1;min-width:220px;padding:13px 14px;border:1px solid #d8dde4;border-radius:10px;font-size:15px}
+.ut-track-search-btn{padding:13px 18px;border:0;border-radius:10px;cursor:pointer;font-weight:700}
+.ut-running-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:15px}
+.ut-running-card{border:1px solid #dfe4ea;border-radius:14px;padding:16px;background:#fafbfc;cursor:pointer;text-align:left;transition:.18s;min-height:145px}
+.ut-running-card:hover{transform:translateY(-2px);border-color:#9fb7cf}
+.ut-running-card .code{font-size:14px;font-weight:800;letter-spacing:.4px}
+.ut-running-card .service{font-size:17px;font-weight:700;margin:8px 0 6px}
+.ut-running-card .meta{font-size:13px;color:#66717d;line-height:1.5}
+.ut-running-card .status{display:inline-block;margin-top:10px;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:700;background:#eef5ff}
+.ut-track-empty{padding:18px;text-align:center;color:#6b7280;border:1px dashed #ccd3dc;border-radius:12px}
+.ut-track-modal{display:none;position:fixed;inset:0;background:rgba(12,18,26,.48);z-index:9999;padding:20px;align-items:center;justify-content:center}
+.ut-track-modal.open{display:flex}
+.ut-track-modal-card{width:min(760px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:18px;padding:22px}
+.ut-track-modal-head{display:flex;justify-content:space-between;gap:15px;align-items:flex-start}
+.ut-track-modal-head h3{margin:3px 0;font-size:22px}
+.ut-track-close{border:0;background:#eef1f4;border-radius:10px;width:42px;height:42px;cursor:pointer;font-size:20px}
+.ut-track-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0}
+.ut-track-detail{padding:12px;border:1px solid #e6e9ed;border-radius:10px}
+.ut-track-detail small{display:block;color:#6b7280;font-size:12px;margin-bottom:4px}
+.ut-track-detail b{font-size:14px}
+@media(max-width:600px){.ut-track-modal{padding:10px}.ut-track-modal-card{padding:16px}.ut-track-detail-grid{grid-template-columns:1fr}}
+</style>
+
+<style>
+#track .track-main-status{margin-top:20px;padding:20px 18px;border:1px solid #dce4eb;border-radius:16px;background:#fff}
+#track .track-main-status-title{font-size:20px;font-weight:800;margin-bottom:14px}
+#track .track-main-status #timeline{display:flex!important;align-items:flex-start;justify-content:space-between;gap:0;width:100%;margin:0;padding:12px 4px 16px;border:0;border-radius:0;background:transparent;overflow-x:auto}
+#track .track-main-status #timeline .mile{position:relative;flex:1 0 155px;min-width:155px;text-align:center;font-size:15px;line-height:1.35;color:#6f7b88;font-weight:600}
+#track .track-main-status #timeline .mile:not(:last-child)::after{content:"";position:absolute;top:24px;left:calc(50% + 25px);right:calc(-50% + 25px);height:3px;background:#dfe5eb}
+#track .track-main-status #timeline .mile.done:not(:last-child)::after{background:#1677ff}
+#track .track-main-status #timeline .dot{width:48px;height:48px;font-size:17px;font-weight:900;margin:0 auto 12px;background:#eef1f4;color:#6d7782;border:4px solid #fff;box-shadow:0 0 0 3px #dce3e9;position:relative;z-index:1}
+#track .track-main-status #timeline .mile.done{color:#11151d}
+#track .track-main-status #timeline .mile.done .dot{background:#1677ff;color:#fff;box-shadow:0 0 0 4px rgba(22,119,255,.13)}
+@media(max-width:700px){#track .track-main-status{padding:16px 10px}#track .track-main-status-title{font-size:18px}#track .track-main-status #timeline{justify-content:flex-start;padding:10px 4px 16px}#track .track-main-status #timeline .mile{flex:0 0 145px;min-width:145px;font-size:14px}}
+</style>
+<style>
+/* Booking timeline: fit all six steps inside the details panel without horizontal scrolling */
+#track .ut-track-modal-card #trackModalTimeline .ut-timeline-track{
+  display:grid !important;
+  grid-template-columns:repeat(6,minmax(0,1fr)) !important;
+  width:100% !important;
+  min-width:0 !important;
+  overflow:visible !important;
+  gap:4px !important;
+  padding:10px 2px 12px !important;
+  align-items:start !important;
+}
+#track .ut-track-modal-card #trackModalTimeline .ut-timeline-step{
+  min-width:0 !important;
+  width:auto !important;
+  font-size:13px !important;
+  line-height:1.25 !important;
+  overflow-wrap:anywhere;
+}
+#track .ut-track-modal-card #trackModalTimeline .ut-timeline-dot{
+  width:40px !important; height:40px !important;
+  font-size:15px !important;
+  margin-bottom:7px !important;
+}
+#track .ut-track-modal-card #trackModalTimeline .ut-timeline-step:not(:last-child)::after{
+  top:19px !important; left:calc(50% + 20px) !important;
+  right:calc(-50% + 20px) !important; height:3px !important;
+}
+@media(max-width:700px){
+  #track .ut-track-modal-card #trackModalTimeline .ut-timeline-track{grid-template-columns:repeat(3,minmax(0,1fr)) !important;row-gap:16px !important}
+  #track .ut-track-modal-card #trackModalTimeline .ut-timeline-step{font-size:12px !important}
+}
+</style>
+<style id="ut-expanded-timeline">
+/* Expanded Booking Status Timeline: six steps visible, no horizontal scrollbar */
+.timeline, .ut-track-timeline, .booking-status-timeline {
+  width:100% !important; max-width:none !important; overflow:visible !important;
+}
+.timeline-track, .ut-track-timeline .timeline-track, .booking-status-timeline .timeline-track {
+  display:grid !important; grid-template-columns:repeat(6,minmax(0,1fr)) !important;
+  width:100% !important; min-width:0 !important; overflow:visible !important; gap:8px !important;
+}
+.timeline-step, .ut-track-timeline .timeline-step, .booking-status-timeline .timeline-step {
+  min-width:0 !important; width:auto !important; flex:none !important;
+  padding:18px 8px !important; text-align:center !important; box-sizing:border-box !important;
+}
+.timeline-step .timeline-label, .timeline-label {
+  white-space:normal !important; overflow:visible !important;
+  font-size:15px !important; line-height:1.35 !important;
+}
+@media(max-width:760px){
+  .timeline-track, .ut-track-timeline .timeline-track, .booking-status-timeline .timeline-track {
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  }
+}
+@media(max-width:430px){
+  .timeline-track, .ut-track-timeline .timeline-track, .booking-status-timeline .timeline-track {
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+}
+</style>
+
+<style id="ut-no-timeline-scroll-final">
+/* FINAL: Booking Status must be fully expanded — no horizontal slider */
+#trackModalTimeline,
+#trackModalTimeline.timeline,
+#trackModalTimeline .timeline,
+#trackModalTimeline .timeline-container,
+#trackModalTimeline .timeline-wrapper,
+#trackModalTimeline .timeline-scroll,
+#trackModalTimeline .timeline-track,
+#trackModalTimeline .status-timeline,
+#trackModalTimeline .status-timeline-container {
+  width:100% !important;
+  max-width:100% !important;
+  min-width:0 !important;
+  overflow:visible !important;
+  overflow-x:visible !important;
+  transform:none !important;
+}
+#trackModalTimeline .timeline-track,
+#trackModalTimeline .status-timeline,
+#trackModalTimeline .status-timeline-container {
+  display:grid !important;
+  grid-template-columns:repeat(6,minmax(0,1fr)) !important;
+  gap:8px !important;
+  white-space:normal !important;
+}
+#trackModalTimeline .timeline-step,
+#trackModalTimeline .status-step {
+  min-width:0 !important;
+  width:auto !important;
+  max-width:none !important;
+  flex:none !important;
+  box-sizing:border-box !important;
+  padding:16px 6px !important;
+  text-align:center !important;
+  white-space:normal !important;
+}
+#trackModalTimeline .timeline-label,
+#trackModalTimeline .status-label {
+  white-space:normal !important;
+  overflow:visible !important;
+  font-size:14px !important;
+  line-height:1.3 !important;
+}
+#trackModalTimeline .timeline-track::before,
+#trackModalTimeline .timeline-track::after {
+  display:none !important;
+}
+@media(max-width:760px){
+  #trackModalTimeline .timeline-track,
+  #trackModalTimeline .status-timeline,
+  #trackModalTimeline .status-timeline-container {
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  }
+}
+@media(max-width:430px){
+  #trackModalTimeline .timeline-track,
+  #trackModalTimeline .status-timeline,
+  #trackModalTimeline .status-timeline-container {
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+}
+</style>
+
+<style id="ut-actual-timeline-final-fix">
+/* ACTUAL #timeline used by the Track Service status panel */
+#track #trackMainTimeline #timeline,
+#track .track-main-status #timeline {
+  display:grid !important;
+  grid-template-columns:repeat(6,minmax(0,1fr)) !important;
+  align-items:start !important;
+  justify-content:stretch !important;
+  gap:6px !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:100% !important;
+  box-sizing:border-box !important;
+  overflow:hidden !important;
+  overflow-x:hidden !important;
+  padding:14px 4px 18px !important;
+}
+#track #trackMainTimeline #timeline .mile,
+#track .track-main-status #timeline .mile {
+  display:block !important;
+  position:relative !important;
+  flex:none !important;
+  flex-basis:auto !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:none !important;
+  box-sizing:border-box !important;
+  text-align:center !important;
+  font-size:14px !important;
+  line-height:1.3 !important;
+  white-space:normal !important;
+  overflow:visible !important;
+}
+#track #trackMainTimeline #timeline .mile .dot,
+#track .track-main-status #timeline .mile .dot {
+  width:46px !important;
+  height:46px !important;
+  min-width:46px !important;
+  margin:0 auto 10px !important;
+  box-sizing:border-box !important;
+}
+#track #trackMainTimeline #timeline .mile:not(:last-child)::after,
+#track .track-main-status #timeline .mile:not(:last-child)::after {
+  top:23px !important;
+  left:calc(50% + 23px) !important;
+  right:calc(-50% + 23px) !important;
+  height:3px !important;
+  display:block !important;
+}
+@media(max-width:760px){
+  #track #trackMainTimeline #timeline,
+  #track .track-main-status #timeline {
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    row-gap:18px !important;
+  }
+}
+@media(max-width:430px){
+  #track #trackMainTimeline #timeline,
+  #track .track-main-status #timeline {
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+}
+</style>
+
+<style id="account-fab-styles">
+.account-fab{position:fixed;top:13px;right:28px;z-index:10050;display:none;font-family:inherit}
+body.customer-auth .account-fab{display:block}
+.account-fab-btn{width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,255,255,.9);background:#fff;box-shadow:0 8px 25px rgba(9,35,65,.20);padding:3px;cursor:pointer;display:grid;place-items:center}
+.account-fab-avatar{width:36px;height:36px;border-radius:50%;background:#0d6fe8;color:#fff;display:grid;place-items:center;font-weight:800;font-size:15px;overflow:hidden}
+.account-fab-avatar img,.account-menu-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.account-menu{position:absolute;right:0;top:55px;width:255px;background:#fff;border:1px solid #e1e8f0;border-radius:16px;padding:10px;box-shadow:0 18px 45px rgba(6,28,52,.20);display:none}
+.account-menu.open{display:block;animation:accountDrop .16s ease-out}
+@keyframes accountDrop{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+.account-menu-head{display:flex;align-items:center;gap:10px;padding:8px 8px 12px;border-bottom:1px solid #edf1f5;margin-bottom:5px}
+.account-menu-head b{display:block;color:#102744;font-size:13px}
+.account-menu-head small{display:block;color:#7a8a9e;font-size:10px;margin-top:3px}
+.account-menu-avatar{width:42px;height:42px;border-radius:50%;background:#e9f3ff;color:#086bd8;display:grid;place-items:center;font-weight:800;overflow:hidden;flex:0 0 auto}
+.account-menu>button{width:100%;border:0;background:transparent;text-align:left;padding:11px 9px;border-radius:10px;color:#20334d;font-weight:650;font-size:12px;cursor:pointer}
+.account-menu>button:hover{background:#f3f7fb}
+.account-menu>button span{display:inline-grid;width:24px;color:#0d6fe8}
+@media(max-width:760px){.account-fab{top:10px;right:12px}.account-menu{right:0;width:235px}.account-fab-btn{width:42px;height:42px}.account-fab-avatar{width:34px;height:34px}}
+</style>
+
+<style id="account-fab-alignment-fix">
+/* Keep the common My Account control seated inside the top panel/header */
+.account-fab{top:14px!important;right:28px!important;display:none;align-items:center}
+body.customer-auth .account-fab{display:none!important}
+body.customer-auth #home.screen.on ~ #accountFab{display:block!important}
+.account-fab-btn{width:44px!important;height:44px!important;padding:2px!important;border-radius:12px!important;border:1px solid #dbe5ef!important;box-shadow:0 4px 14px rgba(9,35,65,.12)!important}
+.account-fab-avatar{width:38px!important;height:38px!important;border-radius:10px!important}
+.account-menu{top:50px!important}
+@media(max-width:760px){.account-fab{top:10px!important;right:12px!important}.account-fab-btn{width:42px!important;height:42px!important}.account-fab-avatar{width:36px!important;height:36px!important}}
+</style>
+
+<style id="auth-flow-styles">
+.auth-field{margin-bottom:12px}.auth-field .auth-label{display:block;margin-bottom:6px}.auth-form textarea,.auth-form input{width:100%;box-sizing:border-box}.auth-form textarea{min-height:76px;resize:vertical;padding:13px 14px;border:1px solid #d6e0eb;border-radius:12px;font:inherit;color:#132b49;background:#fff}.auth-field .auth-label span{font-size:9px;color:#8a98a8;font-weight:700}.auth-step-note{font-size:12px;line-height:1.55;color:#718198;margin:-2px 0 14px}.auth-success-note{background:#f2f8ff;border:1px solid #d8e9fb;color:#174d80;border-radius:12px;padding:10px 12px;font-size:11px;line-height:1.45;margin-bottom:13px}
+</style>
+</style>
+<style>
+/* Profile contact-change verification popup */
+.ut-modal{display:none;position:fixed;inset:0;z-index:10050;background:rgba(8,24,45,.48);padding:20px;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+.ut-modal[style*="display: flex"],.ut-modal.open{display:flex !important}
+.ut-modal-card{width:min(440px,calc(100vw - 40px));max-height:90vh;overflow:auto;background:#fff;border:1px solid #e3e8ef;border-radius:18px;padding:22px;box-shadow:0 24px 70px rgba(0,0,0,.22);position:relative}
+.ut-modal-card h3{margin:6px 0 8px;font-size:22px;color:#13233d}
+.ut-modal-card label{display:block;font-size:12px;font-weight:700;margin:13px 0 6px;color:#24364f}
+.ut-modal-card input{width:100%;box-sizing:border-box;padding:12px 13px;border:1px solid #d5dde7;border-radius:10px;font-size:14px;outline:none}
+.ut-modal-card input:focus{border-color:#2475e8;box-shadow:0 0 0 3px rgba(36,117,232,.10)}
+.ut-modal-close{position:absolute;right:12px;top:12px;width:34px;height:34px;border:0;border-radius:9px;background:#eef2f6;cursor:pointer;font-size:20px;line-height:1}
+@media(max-width:600px){.ut-modal{padding:12px}.ut-modal-card{width:100%;padding:18px;border-radius:16px}}
+</style>
+<style id="profile-account-upgrade">.profile-contact-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}.profile-change-btn{border:1px solid #d7e2ee;background:#f7faff;color:#126bd6;border-radius:10px;padding:10px 12px;font-weight:700;cursor:pointer}.profile-security-list{display:grid;gap:8px;margin:14px 0}.security-row{display:flex;gap:9px;align-items:flex-start;padding:9px;border:1px solid #edf1f5;border-radius:10px}.security-row>span{color:#159447;font-weight:800}.security-row b,.security-row small{display:block}.security-row small{font-size:9px;color:#78889a;margin-top:2px}.profile-progress{margin:12px 0}.profile-progress>div:first-child{display:flex;justify-content:space-between;font-size:10px;color:#66778a}.profile-progress-bar{height:7px;background:#edf2f7;border-radius:10px;overflow:hidden;margin-top:6px}.profile-progress-bar i{display:block;height:100%;width:0;background:#2a8cff;border-radius:10px}.address-book-list{display:grid;gap:9px;margin-top:14px}.address-card{border:1px solid #e6edf4;border-radius:12px;padding:12px;background:#fff}.address-card-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.address-card-top b{color:#17314f}.address-default{display:inline-block;margin-left:7px;font-size:8px;padding:3px 6px;border-radius:999px;background:#e9f7ef;color:#198a4a;font-weight:800}.address-meta{font-size:10px;color:#6c7d90;margin-top:5px}.address-card p{font-size:11px;color:#33475d;line-height:1.45;margin:7px 0 0}.address-actions{display:flex;gap:5px}.address-actions button{border:0;background:#f2f6fa;color:#176bd0;border-radius:7px;padding:5px 8px;font-size:9px;font-weight:700;cursor:pointer}.address-empty{border:1px dashed #d6e1ec;border-radius:10px;padding:18px;text-align:center;color:#7a8999;font-size:11px}.ut-modal{position:fixed;inset:0;background:rgba(10,28,50,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}.ut-modal-card{width:min(460px,100%);background:#fff;border-radius:18px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.2);position:relative}.ut-modal-close{position:absolute;right:12px;top:10px;border:0;background:#f1f5f9;border-radius:50%;width:32px;height:32px;font-size:20px;cursor:pointer}.ut-modal-card h3{margin:6px 0 8px}.ut-modal-card label{display:block;font-size:10px;font-weight:800;color:#5d6d7e;margin:10px 0 5px}.ut-modal-card input,.ut-modal-card textarea{width:100%;box-sizing:border-box}.ut-modal-card textarea{min-height:90px;resize:vertical}@media(max-width:600px){.profile-contact-row{grid-template-columns:1fr}.address-card-top{flex-direction:column}.ut-modal{padding:12px}.ut-modal-card{padding:18px}}</style><style id="floating-controls-no-overlap">
+/* Keep Notification and My Account controls separate on the dashboard. */
+.notification-fab{right:92px!important;top:14px!important;z-index:1200!important}
+.notification-fab .floating-notification-panel{right:50px!important;top:58px!important}
+.account-fab{right:28px!important;top:14px!important;z-index:1201!important}
+.account-menu{top:50px!important}
+@media(max-width:700px){
+  .notification-fab{right:66px!important;top:10px!important}
+  .notification-fab .floating-notification-panel{right:0!important;top:52px!important;width:min(350px,calc(100vw - 80px))!important}
+  .account-fab{right:12px!important;top:10px!important}
+}
+</style>
+</head><body>
+<section id="login" class="screen on">
+  <div class="login auth-login-layout">
+    <div class="login-left auth-panel-left">
+      <div class="brand"><span class="mark">U</span><span>Unique Techno<small>SOLUTIONS</small></span></div>
+      <div class="eyebrow">ON-DEMAND TECHNICAL SERVICE</div>
+      <h1 id="authTitle">Welcome back.<br><span>Let's get started.</span></h1>
+      <p id="authSubtitle">Login with your registered mobile number to browse services, book a professional engineer and track your service live.</p>
+
+      <div class="auth-tabs" role="tablist" aria-label="Customer authentication">
+        <button id="loginTab" class="auth-tab active" type="button" onclick="switchAuth('login')">Login</button>
+        <button id="signupTab" class="auth-tab" type="button" onclick="switchAuth('signup')">Sign Up</button>
+      </div>
+
+      <div id="loginForm" class="auth-form">
+        <label class="auth-label">REGISTERED MOBILE NUMBER</label>
+        <div class="phone"><select aria-label="Country code"><option>+91</option></select><input id="loginPhone" maxlength="10" inputmode="numeric" autocomplete="tel" placeholder="10-digit mobile number"></div>
+        <button class="btn dark login-btn" type="button" onclick="sendLoginOtp()">Continue with OTP →</button>
+        <button class="auth-switch-link" type="button" onclick="switchAuth('signup')">New customer? <b>Create an account</b></button>
+      </div>
+
+      <div id="signupForm" class="auth-form" style="display:none">
+        <div class="auth-step-note">Step 1 of 3 • Enter your mobile number. We will verify it with an OTP.</div>
+        <div class="auth-field"><label class="auth-label">MOBILE NUMBER</label><div class="phone"><select aria-label="Country code"><option>+91</option></select><input id="signupPhone" maxlength="10" inputmode="numeric" autocomplete="tel" placeholder="10-digit mobile number"></div></div>
+        <button class="btn dark login-btn" type="button" onclick="sendSignupOtp()">Continue with OTP →</button>
+        <button class="auth-switch-link" type="button" onclick="switchAuth('login')">Already registered? <b>Login here</b></button>
+      </div>
+
+      <div id="otpStep" class="otp auth-otp-step">
+        <div class="eyebrow">VERIFY MOBILE</div>
+        <p id="otpMessage" class="auth-otp-message">Enter the 6-digit OTP sent to your mobile.</p>
+        <input id="otp" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="123456">
+        <button class="btn dark login-btn" type="button" onclick="verifyAuthOtp()">Verify & Continue →</button>
+        <button class="auth-back-link" type="button" onclick="backToAuthForm()">← Change mobile number</button>
+        <p class="auth-demo-note">Prototype OTP: <b>123456</b></p>
+      </div>
+
+      <div id="signupProfileStep" class="auth-form" style="display:none">
+        <div class="eyebrow">CREATE PROFILE</div>
+        <div class="auth-step-note">Step 3 of 3 • Your mobile is verified. Complete these details to create your account.</div>
+        <div class="auth-success-note">✓ Mobile number verified successfully.</div>
+        <div class="auth-field"><label class="auth-label">FULL NAME</label><input id="signupName" maxlength="80" autocomplete="name" placeholder="Enter your full name"></div>
+        <div class="auth-field"><label class="auth-label">EMAIL <span>(REQUIRED)</span></label><input id="signupEmail" maxlength="120" type="email" autocomplete="email" placeholder="you@example.com" required></div>
+        <div class="auth-field"><label class="auth-label">SERVICE ADDRESS <span>(REQUIRED)</span></label><textarea id="signupAddress" maxlength="300" autocomplete="street-address" placeholder="House / Flat, Street, Area, City, PIN"></textarea></div>
+        <button class="btn dark login-btn" type="button" onclick="completeSignup()">Create Profile →</button>
+        <button class="auth-back-link" type="button" onclick="backToSignupOtp()">← Back to OTP</button>
+      </div>
+    </div>
+    <div class="login-right">
+      <div class="corp">
+        <div class="eyebrow" style="color:#2aa8ff">SMART SERVICE NETWORK</div>
+        <h2>Technology that<br><b>protects & connects.</b></h2>
+        <p>CCTV • NETWORKING • IT INFRASTRUCTURE • AUTOMATION</p>
+        <div class="corp-grid"><div class="corp-card"><b>◉ CCTV & Security</b><span>Install • Repair • AMC</span></div><div class="corp-card"><b>⌁ Networking</b><span>Wi‑Fi • LAN • Fiber</span></div><div class="corp-card"><b>▣ IT Infrastructure</b><span>Laptop • Server • Workstation</span></div><div class="corp-card"><b>⚙ Automation</b><span>PLC • BMS • Smart Systems</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+<aside id="appSidebar" aria-label="Customer navigation">
+  <div class="side-brand"><span class="side-mark">U</span><div><b>UNIQUE</b><small>TECHNO SOLUTIONS</small></div></div>
+  <div class="side-label">CUSTOMER PORTAL</div>
+  <nav class="side-nav">
+    <button class="active" data-page="home" data-nav="home" onclick="show('home')"><span>⌂</span> Dashboard</button>
+    <button data-page="servicesPage" data-nav="servicesPage" onclick="show('servicesPage');renderServices()"><span>⚙</span> Book a Service</button>
+    <button data-page="history" data-nav="bookings" onclick="show('history','bookings');loadHistory()"><span>▣</span> My Bookings</button>
+    <button data-page="track" data-nav="track" onclick="show('track') ;openLatestActive()"><span>⌁</span> Track Service</button>
+    <button data-page="payments" data-nav="payments" onclick="show('payments');loadHistory();renderPayments()"><span>▤</span> Payments & Invoices</button>
+    <button data-page="profile" data-nav="profile" onclick="show('profile','profile');loadProfile()"><span>◯</span> My Account</button>
+  </nav>
+  <div class="side-divider"></div>
+  <nav class="side-nav secondary">
+    <button data-page="notifications" data-nav="notifications" onclick="show('notifications');loadNotifications()"><span>♢</span> Notifications <i id="sideNotifCount"></i></button>
+    <button data-page="help" data-nav="help" onclick="show('help');loadSupport()"><span>?</span> Support / Complaint</button>
+    <button data-page="login" onclick="logoutCustomer()"><span>↪</span> Logout</button>
+  </nav>
+  <div class="side-help"><strong>Need Assistance?</strong><p>Our support team is ready to help with your service.</p><button onclick="show('help');loadSupport()">Contact Support</button></div>
+  <div class="side-footer">© 2026 Unique Techno Solutions</div>
+</aside>
+<section id="home" class="screen">
+  <div class="nav"><div class="navin"><div class="brand"><span class="mark">U</span><span>Unique Techno</span></div><div class="navlinks"><button onclick="show('home')">Home</button><button onclick="show('servicesPage');renderServices()">Services</button><button onclick="show('history');loadHistory()">My Bookings</button><button onclick="show('track');openLatestActive()">Track Service</button><button onclick="show('payments');loadHistory();renderPayments()">Payments</button><button onclick="show('notifications');loadNotifications()">🔔 <span id="notifCount"></span></button><button onclick="show('profile');loadProfile()">My Account</button><button onclick="show('help');loadSupport()">Support</button></div></div></div>
+  <div class="wrap dashboard-wrap">
+    <div class="dashboard-hero">
+      <div class="dashboard-hero-copy">
+        <div class="hero-badge"><span></span> ON-DEMAND SERVICE</div>
+        <div class="eyebrow">UNIQUE TECHNO SOLUTIONS</div>
+        <h1 id="dashGreeting">Welcome back.</h1>
+        <p id="dashSubtitle">Professional technical support whenever you need it.</p>
+        <div class="dash-actions"><button class="btn hero-primary" onclick="show('servicesPage');renderServices()">Book a Service <b>→</b></button><button class="hero-link" onclick="show('history');loadHistory()">View history</button></div>
+        <div class="hero-trust"><span>✓ Verified Engineers</span><span>✓ Quick Response</span><span>✓ Quality Service</span></div>
+      </div>
+      <section class="offers-panel offers-top" id="offersPanel"></section>
+    </div>
+
+    <div class="stats-row" id="dashStats">
+      <div class="stat-card"><span class="stat-icon blue">◫</span><div><small>Total Bookings</small><b id="statTotal">0</b></div></div>
+      <div class="stat-card"><span class="stat-icon green">✓</span><div><small>Completed</small><b id="statCompleted">0</b></div></div>
+      <div class="stat-card"><span class="stat-icon orange">◷</span><div><small>Active Services</small><b id="statActive">0</b></div></div>
+      <div class="stat-card"><span class="stat-icon purple">★</span><div><small>Average Rating</small><b id="statRating">—</b></div></div>
+    </div>
+
+    <div class="dashboard-grid">
+      <main class="dashboard-main">
+        <section class="dash-panel current-panel" id="currentServicePanel"></section>
+        <section class="dash-panel" id="upcomingPanel"></section>
+        <section class="dash-panel last-service-panel" id="lastServicePanel"></section>
+        <section class="dash-panel recommendations-panel" id="recommendationsPanel"></section>
+      </main>
+      <aside class="dashboard-right">
+        <section class="dash-panel notification-panel collapsed" id="dashboardNotificationPanel">
+  <button class="notification-toggle" type="button" onclick="toggleDashboardNotifications()" aria-expanded="false" aria-controls="dashNotifications">
+    <span class="notification-toggle-icon">🔔</span>
+    <span class="notification-toggle-copy"><span class="eyebrow">UPDATES</span><b>Notifications</b><small id="dashNotifSummary">Tap to view updates</small></span>
+    <span class="notification-toggle-count" id="dashNotifBadge"></span>
+    <span class="notification-toggle-arrow" id="dashNotifArrow">⌄</span>
+  </button>
+  <div class="notification-expanded">
+    <div class="notification-expanded-head"><span>Recent updates</span><button class="text-link" onclick="show('notifications');loadNotifications()">View All →</button></div>
+    <div id="dashNotifications"></div>
+  </div>
+</section>
+        <section class="dash-panel invoice-panel" id="dashInvoice"></section>
+        <section class="support-banner"><div><span class="eyebrow">NEED ASSISTANCE?</span><h3>We're here to help.</h3><p>Technical support when you need it.</p><button onclick="show('help');loadSupport()">Contact Support</button></div><div class="support-orb">?</div></section>
+      </aside>
+    </div>
+
+    <section class="trust-strip"><div>✓ <b>Verified Engineers</b><small>Skilled professionals</small></div><div>✓ <b>Transparent Pricing</b><small>No hidden charges</small></div><div>✓ <b>Quality Service</b><small>Service-focused support</small></div><div>✓ <b>On-time Response</b><small>We value your time</small></div></section>
+  </div>
+</section>
+<section id="servicesPage" class="screen"><div class="nav"><div class="navin"><div class="brand"><span class="mark">U</span><span>Unique Techno</span></div><div class="navlinks"><button onclick="show('home')">Home</button><button onclick="show('servicesPage');renderServices()">Services</button><button onclick="show('history');loadHistory()">My Bookings</button><button onclick="show('track');openLatestActive()">Track Service</button><button onclick="show('payments');loadHistory();renderPayments()">Payments</button><button onclick="show('notifications');loadNotifications()">🔔 <span id="notifCount"></span></button><button onclick="show('profile');loadProfile()">My Account</button><button onclick="show('help');loadSupport()">Support</button></div></div></div><div class="wrap"><div class="hero"><div class="eyebrow">SERVICES</div><h1>Choose a service.</h1><p>Transparent starting prices. Final parts/material charges are confirmed after inspection.</p><div class="search"><span class="search-icon" aria-hidden="true">⌕</span><input id="serviceSearch" placeholder="Search services by name or category..." autocomplete="off" oninput="filterServices(this.value)"></div><div class="service-filters" role="tablist" aria-label="Service categories"><button class="service-filter active" data-cat="all" onclick="setServiceCategory('all',this)">All Services</button><button class="service-filter" data-cat="cctv" onclick="setServiceCategory('cctv',this)">CCTV & Security</button><button class="service-filter" data-cat="network" onclick="setServiceCategory('network',this)">Networking</button><button class="service-filter" data-cat="it" onclick="setServiceCategory('it',this)">IT & Devices</button><button class="service-filter" data-cat="infra" onclick="setServiceCategory('infra',this)">Server & Infrastructure</button><button class="service-filter" data-cat="automation" onclick="setServiceCategory('automation',this)">Automation</button></div></div><div id="services" class="services"></div></div></section>
+<section id="details" class="screen"><div class="wrap detail"><button class="back" onclick="show('servicesPage');renderServices()">← Services</button><div class="detail-grid"><div class="visual" id="dIcon"></div><div class="detail-copy"><div class="eyebrow">SERVICE DETAILS</div><h1 id="dName"></h1><p id="dDesc"></p><div class="bigprice" id="dPrice"></div><div class="includes"><b>What's included</b><div>✓ Professional engineer visit</div><div>✓ Initial diagnosis & assessment</div><div>✓ Installation / configuration as applicable</div><div>✓ Testing after service</div></div><button class="btn dark" style="width:100%;margin-top:20px" onclick="openBooking()">Book this service →</button></div></div></div></section>
+<section id="booking" class="screen"><div class="wrap booking booking-premium">
+  <button class="back booking-back" onclick="show('details')">← Service details</button>
+  <div class="booking-heading"><div><div class="eyebrow">SECURE SERVICE BOOKING</div><h1>Schedule your service.</h1><p>Choose a convenient date and time, then tell us where you need our engineer.</p><div class="booking-cancel-note"><b>NB:</b> You can cancel this service until an engineer is assigned. Once an engineer is assigned, cancellation is not available.</div></div><div class="booking-trust"><span>✓ Verified Engineers</span><span>✓ Transparent Pricing</span><span>✓ Quick Response</span></div></div>
+  <div class="booking-grid premium-grid">
+    <div class="panel booking-form-card">
+      <div class="form-card-head"><div><span class="section-number">01</span><div><h2>When should we visit?</h2><p>Select your preferred service date and time.</p></div></div><span class="required-note">* Required</span></div>
+      <label class="field-label">Service date <em class="required-star">*</em></label><div class="date-picks" id="datePicks"></div><button type="button" class="calendar-picker-btn" id="calendarPickerBtn" onclick="openCalendarPicker()"><span>▣</span><span><b>Choose another date</b><small>Need a date beyond the quick options? Open calendar</small></span><strong>→</strong></button><input id="date" type="date" class="native-date-hidden" aria-label="Service date">
+      <label class="field-label">Preferred time <em class="required-star">*</em></label><div class="time-picks" id="timePicks"></div><select id="time" class="native-time-hidden" aria-label="Preferred time"><option>09:00 AM</option><option>11:00 AM</option><option>01:00 PM</option><option>03:00 PM</option><option>05:00 PM</option><option>07:00 PM</option></select>
+      <div class="form-divider"></div>
+      <div class="form-card-head location-head"><div><span class="section-number">02</span><div><h2>Where should we come?</h2><p>Give us the complete service location.</p></div></div></div>
+      <label class="field-label" for="address">Service address <em class="required-star">*</em></label><div class="input-shell"><span>⌖</span><input id="address" placeholder="House / Office, Area, City" autocomplete="street-address"></div>
+      <label class="field-label" for="problem">Requirement <span>Optional</span></label><textarea id="problem" class="premium-textarea" placeholder="Tell us what you need, the issue you're facing, or any special instructions..."></textarea>
+      <div class="secure-note"><span>✓</span><div><b>Your information is secure</b><small>We only use these details to arrange your service visit.</small></div></div>
+      <button class="btn dark booking-confirm-btn" onclick="confirmBooking()"><span>Confirm booking</span><b>→</b></button>
+    </div>
+    <aside class="panel booking-summary-card">
+      <div class="summary-top"><div><div class="eyebrow">BOOKING SUMMARY</div><h2>Your service</h2></div><span class="summary-check">✓</span></div>
+      <div class="summary-service"><div class="summary-icon">⚙</div><div><span>SELECTED SERVICE</span><h3 id="sName">—</h3></div></div>
+      <div class="summary-lines"><div class="line"><span>Visit charge</span><b id="sPrice">—</b></div><div class="line"><span>Service visit</span><b>Included</b></div></div>
+      <div class="summary-total"><span>Total starting price</span><strong id="sTotal">—</strong></div>
+      <div class="summary-info"><div><span>◷</span><p><b>Flexible scheduling</b><small>Choose a slot that works for you.</small></p></div><div><span>✓</span><p><b>Professional engineer</b><small>Verified technical support.</small></p></div><div><span>₹</span><p><b>No hidden visit charge</b><small>Parts/materials are confirmed after inspection.</small></p></div></div>
+      <div class="summary-bottom">Need help before booking? <button onclick="show('help');loadSupport()">Contact support →</button></div>
+    </aside>
+  </div>
+  <div id="bookingResult" class="booking-result" style="display:none">
+    <div class="booking-result-head"><div><span class="eyebrow">BOOKING CONFIRMED</span><h2>Your booking is ready</h2><p>Keep this Booking ID for support and future reference.</p></div><span class="booking-result-check">✓</span></div>
+    <div class="booking-result-grid">
+      <div><small>Booking ID</small><b id="resultBookingId">—</b></div>
+      <div><small>Service</small><b id="resultBookingService">—</b></div>
+      <div><small>Date & Time</small><b id="resultBookingDate">—</b></div>
+      <div><small>Amount</small><b id="resultBookingAmount">—</b></div>
+      <div class="booking-result-wide"><small>Service address</small><b id="resultBookingAddress">—</b></div>
+      <div><small>Status</small><span id="resultBookingStatus" class="status-pill warn">PENDING</span></div>
+    </div>
+    <button class="btn dark" type="button" onclick="show('track');openLatestActive()">Track current service →</button>
+  </div>
+  <div class="booking-records panel" id="bookingRecords"><div class="booking-records-head"><div><span class="eyebrow">YOUR BOOKINGS</span><h2>Booking IDs & details</h2><p>Every booking stays here for your reference.</p></div></div><div id="bookingRecordsList"></div></div>
+</div></section>
+<div id="bookingDetailsModal" class="cancel-modal booking-details-modal" aria-hidden="true">
+  <div class="cancel-modal-backdrop" onclick="closeBookingDetails()"></div>
+  <div class="cancel-modal-card booking-details-card" role="dialog" aria-modal="true" aria-labelledby="bookingDetailsTitle">
+    <button class="cancel-modal-close" type="button" onclick="closeBookingDetails()" aria-label="Close">×</button>
+    <div class="eyebrow">BOOKING DETAILS</div>
+    <h2 id="bookingDetailsTitle">Your Booking</h2>
+    <div class="booking-details-status-row"><span id="bdStatus" class="status-pill warn">PENDING</span><span id="bdKind" class="booking-type regular-type">REGULAR</span></div>
+    <div class="booking-details-grid">
+      <div><small>Service</small><b id="bdService">—</b></div>
+      <div><small>Booking ID</small><b id="bdId">—</b></div>
+      <div><small>Date & Time</small><b id="bdDate">—</b></div>
+      <div><small>Payment</small><b id="bdPayment">—</b></div>
+      <div class="booking-details-wide"><small>Service Address</small><b id="bdAddress">—</b></div>
+      <div><small>Engineer</small><b id="bdEngineer">Not assigned</b></div>
+      <div><small>Engineer Contact</small><b id="bdEngineerPhone">—</b></div>
+      <div><small>Amount</small><b id="bdAmount">₹0</b></div>
+      <div><small>Current Status</small><b id="bdCurrentStatus">Pending</b></div>
+    </div>
+    <div class="booking-details-policy"><b>Cancellation Policy</b><p>You can cancel this service until an engineer is assigned. Once an engineer is assigned, cancellation is not available.</p></div>
+    <div id="bdCancellationReason" class="booking-details-cancelled" style="display:none"><b>Cancellation Reason</b><p id="bdReason">—</p></div>
+    <div class="booking-details-actions"><button type="button" class="btn" onclick="closeBookingDetails()">Close</button><button type="button" class="btn invoice-btn" id="bdInvoiceBtn" style="display:none" onclick="downloadInvoiceFromDetails()">⬇ Download Invoice</button><button type="button" class="btn dark" id="bdTrackBtn">Track Service →</button></div>
+  </div>
+</div>
+<div id="cancelReasonModal" class="cancel-modal" aria-hidden="true">
+  <div class="cancel-modal-backdrop" onclick="closeCancelReason()"></div>
+  <div class="cancel-modal-card" role="dialog" aria-modal="true" aria-labelledby="cancelReasonTitle">
+    <button class="cancel-modal-close" type="button" onclick="closeCancelReason()" aria-label="Close">×</button>
+    <div class="eyebrow">CANCEL BOOKING</div>
+    <h2 id="cancelReasonTitle">Why are you cancelling?</h2>
+    <p>Please select a reason. If your reason is not listed, choose <b>Other</b> and tell us more.</p>
+    <div class="cancel-reasons" id="cancelReasons">
+      <button type="button" data-reason="Change of plan">Change of plan</button>
+      <button type="button" data-reason="Booked by mistake">Booked by mistake</button>
+      <button type="button" data-reason="Service no longer required">Service no longer required</button>
+      <button type="button" data-reason="Need a different date/time">Need a different date/time</button>
+      <button type="button" data-reason="Price concern">Price concern</button>
+      <button type="button" data-reason="Other">Other</button>
+    </div>
+    <textarea id="cancelOtherReason" class="cancel-other-reason" maxlength="500" placeholder="Please tell us your reason..." style="display:none"></textarea>
+    <div class="cancel-modal-actions"><button type="button" class="btn" onclick="closeCancelReason()">Keep Booking</button><button type="button" class="btn dark" id="submitCancelReason" onclick="submitCancelReason()">Submit Cancellation</button></div>
+  </div>
+</div>
+<section id="track" class="screen"><div class="track"><div class="track-card"><div style="display:flex;justify-content:flex-start;margin-bottom:14px"><button id="homeFromTrack" class="back" onclick="show('home')">← Home</button></div>
+<div class="ut-track-browser">
+  <div class="eyebrow">TRACK YOUR SERVICE</div>
+  <h3 style="margin:5px 0 7px;font-size:21px">Running Bookings</h3>
+  <p style="margin:0;color:#68727e;font-size:14px">Search by Booking ID or select any active booking below. Completed services awaiting approval are included.</p>
+  <div class="ut-track-search-row" style="margin-top:13px">
+    <input id="trackBookingSearch" type="text" placeholder="Enter Booking ID, e.g. UT-A1B2C3" autocomplete="off">
+    <button class="ut-track-search-btn btn dark" type="button" onclick="searchTrackBooking()">Search</button>
+  </div>
+  <div id="runningBookingGrid" class="ut-running-grid"></div>
+<div class="track-main-status" id="trackMainTimeline"><div class="track-main-status-title">Booking Status</div><div class="timeline" id="timeline"></div></div>
+
+  <div id="trackSearchMessage" style="margin-top:10px;font-size:13px;color:#b42318"></div>
+</div>
+<div id="legacyTrackPanel" style="display:none" aria-hidden="true"><h2 id="tTitle"></h2><div id="tMsg"></div><div id="etaBox"><div id="etaText"></div></div><div class="timeline" id="timeline"></div><div id="eng"></div><div id="confirmBox"></div><div id="paymentBox"><span id="payStatus"></span><button id="payButton"></button></div><div id="reviewBox"><textarea id="reviewText"></textarea></div><div id="tDate"></div><div id="tAddress"></div></div></div></div></section>
+<section id="history" class="screen"><div class="account"><div class="wrap"><button class="back" onclick="show('home')">← Home</button><div class="hero section-hero hero-bookings" style="padding-bottom:15px"><div class="hero-copy"><div class="eyebrow" id="historyEyebrow">MY BOOKINGS</div><h1 id="historyHeroTitle">My Bookings</h1><p id="historyHeroText">Track active requests, approve completed services and see what is coming next.</p></div><div class="hero-visual booking-visual" id="bookingHeroVisual"><div class="visual-top"><span id="bookingHeroLabel">LIVE REQUEST</span><b id="bookingHeroCode">UTS</b></div><div class="booking-hero-service"><div><span id="bookingHeroService">No active service</span><small id="bookingHeroSchedule">Book a service to get started</small></div><span class="mini-status" id="bookingHeroStatus">READY</span></div><div class="booking-timeline" id="bookingHeroTimeline"><div class="timeline-step"><i></i><span>Booking confirmed</span></div><div class="timeline-step"><i></i><span>Engineer assigned</span></div><div class="timeline-step"><i></i><span>On the Way</span></div><div class="timeline-step"><i></i><span>Service completed</span></div></div><div class="booking-hero-engineer" id="bookingHeroEngineer"><span>Engineer assignment</span><b>Waiting for assignment</b></div><div class="visual-foot" id="bookingHeroUpdated">Live booking updates</div></div></div><div class="booking-filterbar" role="tablist" aria-label="Booking filters">
+  <button class="booking-filter active" data-filter="all" onclick="setBookingFilter('all',this)">All <span id="countAll">0</span></button>
+  <button class="booking-filter" data-filter="upcoming" onclick="setBookingFilter('upcoming',this)">Upcoming <span id="countUpcoming">0</span></button>
+  <button class="booking-filter" data-filter="active" onclick="setBookingFilter('active',this)">In Progress <span id="countActive">0</span></button>
+  <button class="booking-filter" data-filter="completed" onclick="setBookingFilter('completed',this)">Completed <span id="countCompleted">0</span></button>
+  <button class="booking-filter" data-filter="cancelled" onclick="setBookingFilter('cancelled',this)">Cancelled <span id="countCancelled">0</span></button>
+</div>
+<div id="historyList" class="history-list"></div></div></div></section>
+<section id="notifications" class="screen"><div class="account"><div class="wrap"><button class="back" onclick="show('home')">← Home</button><div class="hero" style="padding-bottom:15px"><div class="eyebrow">UPDATES</div><div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><div><h1 style="margin:0 0 4px">Notifications</h1><p style="margin:0">Booking, engineer and payment updates.</p></div><button type="button" class="btn" onclick="markAllNotificationsRead()">Mark all read</button></div></div><div id="notificationList" style="display:grid;gap:9px"></div></div></div></section>
+<section id="payments" class="screen"><div class="account"><div class="wrap"><button class="back" onclick="show('home')">← Home</button><div class="hero section-hero hero-payments" style="padding-bottom:15px"><div class="hero-copy"><div class="eyebrow">BILLING CENTER</div><h1>Payments & Invoices</h1><p>Keep every service charge, receipt and payment status in one secure place.</p></div><div class="hero-visual invoice-visual"><div class="invoice-head"><span>UNIQUE TECHNO</span><b>INVOICE</b></div><div class="invoice-total">₹ <strong>—</strong></div><div class="invoice-meta"><span>Service</span><span>Payment status</span></div><div class="invoice-bar"><i></i></div><div class="invoice-foot"><span>Digital receipt</span><b>SECURE</b></div></div></div><div id="paymentList" class="history-list"></div></div></div></section>
+<section id="profile" class="screen"><div class="account"><div class="wrap"><button class="back" onclick="show('home')">← Home</button><div class="hero section-hero hero-reviews" style="padding-bottom:15px"><div class="hero-copy"><div class="eyebrow">MY ACCOUNT</div><h1>Profile & Account</h1><p>Manage your personal information, verified contacts and service addresses.</p></div><div class="hero-visual review-visual"><div class="review-ring"><span id="profileCompletionPct">0%</span><b>PROFILE</b></div><div class="review-copy"><strong id="profileCompletionText">Profile completion</strong><span>Keep your details updated for faster service.</span></div><div class="review-stars-line">✓ VERIFIED</div></div></div><div class="profile-grid"><div class="panel"><div id="profileAvatar" class="profile-avatar">C</div><h3 id="profileWelcome">Customer</h3><p style="font-size:10px;color:#777">Your account details and verification status.</p><div id="profileSecurity" class="profile-security-list"></div><div class="profile-progress"><div><span>Profile completion</span><b id="profileCompletionLabel">0%</b></div><div class="profile-progress-bar"><i id="profileCompletionBar"></i></div></div><input id="profilePhotoInput" type="file" accept="image/*" style="display:none" onchange="changeProfilePhoto(this)"><button class="btn" type="button" onclick="triggerProfilePhoto()">Change DP</button></div><div class="panel"><h3>Personal Information</h3><label>Name</label><input id="pName"><label>Mobile Number</label><div class="profile-contact-row"><input id="pPhone" disabled><button type="button" class="profile-change-btn" onclick="openProfileChange('mobile')">Change</button></div><label>Email</label><div class="profile-contact-row"><input id="pEmail" disabled><button type="button" class="profile-change-btn" onclick="openProfileChange('email')">Change</button></div><button class="btn dark" style="margin-top:13px" onclick="saveProfile()">Save Personal Details</button></div></div><div class="panel" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><h3 style="margin:0">Address Book</h3><p style="font-size:10px;color:#777;margin:4px 0 0">Save addresses for faster service booking.</p></div><button class="btn dark" type="button" onclick="openAddressModal()">+ Add Address</button></div><div id="addressBookList" class="address-book-list"></div></div></div></div></section>
+<section id="help" class="screen"><div class="account"><div class="wrap"><button class="back" onclick="show('home')">← Home</button><div class="hero" style="padding-bottom:15px"><div class="eyebrow">SUPPORT</div><h1>Help & Support</h1><p>Raise a request for booking, service, payment or revisit assistance.</p></div><div class="profile-grid"><div class="panel"><h3>Raise a support request</h3><label>Booking ID (optional)</label><input id="supportBooking" placeholder="e.g. UTS-A1B2C3"><label>Subject</label><input id="supportSubject" placeholder="Payment issue / revisit / service issue"><label>Message</label><textarea id="supportMessage" placeholder="Describe the issue..."></textarea><button class="btn dark" style="margin-top:12px" onclick="submitSupport()">Submit Request</button><p style="font-size:9px;color:#777;margin-top:10px">For urgent assistance, contact Unique Techno support directly.</p></div><div><div class="panel"><h3>Support requests</h3><div id="supportList" style="display:grid;gap:8px"></div></div></div></div></div></div></section>
+<div id="offerDetailsModal" class="offer-modal" role="dialog" aria-modal="true" aria-labelledby="offerModalTitle" onclick="if(event.target===this)closeOfferDetails()"><div class="offer-modal-card"><button class="offer-modal-close" aria-label="Close" onclick="closeOfferDetails()">×</button><div class="offer-modal-top"><span id="offerModalBadge" class="offer-modal-badge">LIMITED OFFER</span><span id="offerModalIcon" class="offer-modal-icon">✦</span></div><div class="eyebrow">OFFER DETAILS</div><h2 id="offerModalTitle">Offer</h2><p id="offerModalDesc"></p><div class="offer-modal-save" id="offerModalDiscount"></div><div class="offer-modal-info"><div><small>PRICE</small><b id="offerModalPrice">—</b></div><div><small>SERVICE</small><b id="offerModalService">—</b></div><div><small>VALIDITY</small><b id="offerModalValid">—</b></div></div><div class="offer-modal-note">Fixed offer price shown above. Additional material/parts charges apply only if separately approved.</div><div class="offer-modal-actions"><button id="offerModalBook" class="btn dark">Book This Offer →</button><button class="offer-modal-secondary" onclick="closeOfferDetails()">Close</button></div></div></div>
+<div id="cancellationSuccessModal" class="booking-success-modal cancellation-success-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="cancellationSuccessTitle">
+  <div class="booking-success-backdrop" onclick="closeCancellationSuccess()"></div>
+  <div class="booking-success-card cancellation-success-card">
+    <button class="booking-success-close" type="button" aria-label="Close" onclick="closeCancellationSuccess()">×</button>
+    <div class="booking-success-icon cancellation-icon">✓</div>
+    <div class="eyebrow">BOOKING UPDATE</div>
+    <h2 id="cancellationSuccessTitle">Booking Cancelled Successfully</h2>
+    <p class="booking-success-sub">Your service booking has been cancelled successfully.</p>
+    <div class="cancellation-success-reason"><small>REASON</small><b id="cancelSuccessReason">—</b></div>
+    <div class="booking-success-id"><small>BOOKING ID</small><b id="cancelSuccessBookingId">—</b></div>
+    <div class="booking-success-actions"><button class="btn dark" type="button" onclick="closeCancellationSuccess();setBookingFilter('cancelled',document.querySelector('[data-filter=cancelled]'))">View cancelled bookings</button></div>
+  </div>
+</div>
+<div id="toast" style="position:fixed;right:15px;bottom:15px;background:#11151d;color:#fff;padding:11px 13px;border-radius:9px;font-size:10px;display:none"></div>
+<script src="/static/js/customer.js?v=20260903-notify-read-fixprofile-change-otp-resend-button-20260903"></script><div id="bookingSuccessModal" class="booking-success-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="bookingSuccessTitle">
+  <div class="booking-success-backdrop" onclick="closeBookingSuccess()"></div>
+  <div class="booking-success-card">
+    <button class="booking-success-close" type="button" aria-label="Close" onclick="closeBookingSuccess()">×</button>
+    <div class="booking-success-icon">✓</div>
+    <div class="eyebrow">BOOKING CONFIRMED</div>
+    <h2 id="bookingSuccessTitle">Your service is booked!</h2>
+    <p class="booking-success-sub">Your booking has been successfully created. Keep the Booking ID for future reference.</p>
+    <div class="booking-success-id"><small>BOOKING ID</small><b id="successBookingId">—</b></div>
+    <div class="booking-success-grid">
+      <div><small>Service</small><b id="successBookingService">—</b></div>
+      <div><small>Date & Time</small><b id="successBookingDate">—</b></div>
+      <div><small>Amount</small><b id="successBookingAmount">—</b></div>
+      <div><small>Status</small><span id="successBookingStatus" class="status-pill warn">PENDING</span></div>
+    </div>
+    <div class="booking-success-actions">
+      <button class="btn dark" type="button" onclick="closeBookingSuccess();document.getElementById('bookingResult')?.scrollIntoView({behavior:'smooth',block:'start'})">View booking details</button>
+    </div>
+  </div>
+</div>
+<style id="ut-track-status-host-fix">
+/* Keep the Service Journey as a full-width block inside the tracking modal.
+   The previous .timeline class made the host itself a 6-column grid item. */
+#trackServiceModal #trackModalTimeline.ut-track-status-host{
+  display:block !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:none !important;
+  margin:18px 0 0 !important;
+  padding:0 !important;
+  border:0 !important;
+  background:transparent !important;
+  overflow:visible !important;
+}
+#trackServiceModal #trackModalTimeline.ut-track-status-host > .ut-journey{
+  width:100% !important;
+  box-sizing:border-box !important;
+}
+@media(max-width:760px){
+  #trackServiceModal .ut-track-modal-card{width:min(96vw,1000px) !important;max-height:94vh !important;padding:18px !important;}
+  #trackServiceModal #trackModalTimeline.ut-track-status-host{margin-top:14px !important;}
+}
+</style>
+<style id="ut-service-journey-v2">
+/* Unique Techno — Service Journey / Booking Status */
+#trackServiceModal .ut-track-modal-card{
+  width:min(1000px,100%);
+  max-height:92vh;
+  padding:24px;
+  border-radius:22px;
+}
+.ut-journey{
+  margin-top:18px;
+  padding:20px 18px 18px;
+  border:1px solid #e2e8f0;
+  border-radius:18px;
+  background:linear-gradient(180deg,#fff 0%,#fbfdff 100%);
+}
+.ut-journey-head{
+  display:flex;justify-content:space-between;align-items:flex-end;gap:12px;
+  margin-bottom:22px;
+}
+.ut-journey-title{font-size:20px;font-weight:800;color:#10233f;margin:0}
+.ut-journey-sub{font-size:12px;color:#718096;margin-top:4px}
+.ut-live-chip{
+  display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border-radius:999px;
+  background:#eff6ff;color:#1769d1;font-size:11px;font-weight:800;letter-spacing:.35px;
+}
+.ut-live-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.12)}
+.ut-journey-track{
+  display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;
+  width:100%;position:relative;
+}
+.ut-journey-step{
+  position:relative;text-align:center;min-width:0;padding:0 3px;
+  color:#8a96a5;font-size:12px;line-height:1.35;
+}
+.ut-journey-step::before{
+  content:"";position:absolute;height:3px;background:#e6ebf1;
+  top:22px;left:calc(50% + 24px);right:calc(-50% + 24px);z-index:0;
+}
+.ut-journey-step:last-child::before{display:none}
+.ut-journey-step.done::before{background:#20b26b}
+.ut-journey-node{
+  width:48px;height:48px;margin:0 auto 10px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:#f1f4f7;border:3px solid #fff;box-shadow:0 0 0 2px #dfe5ec;
+  color:#8793a2;font-size:18px;position:relative;z-index:1;
+}
+.ut-journey-step.done{color:#16834d;font-weight:700}
+.ut-journey-step.done .ut-journey-node{
+  background:#20b26b;color:#fff;box-shadow:0 0 0 3px rgba(32,178,107,.13);
+}
+.ut-journey-step.current{color:#1769d1;font-weight:800}
+.ut-journey-step.current .ut-journey-node{
+  background:#1677ff;color:#fff;box-shadow:0 0 0 5px rgba(22,119,255,.12),0 0 20px rgba(22,119,255,.18);
+  animation:utPulse 1.8s ease-in-out infinite;
+}
+.ut-journey-name{min-height:32px;display:flex;align-items:center;justify-content:center}
+.ut-journey-state{
+  display:inline-block;margin-top:6px;padding:4px 8px;border-radius:999px;
+  background:#f1f5f9;color:#7b8794;font-size:10px;font-weight:800;text-transform:uppercase;
+}
+.ut-journey-step.current .ut-journey-state{background:#e8f2ff;color:#1677ff}
+.ut-journey-step.done .ut-journey-state{background:#eaf9f1;color:#16834d}
+.ut-journey-note{
+  margin-top:20px;padding:13px 15px;border-radius:13px;
+  background:#eef6ff;border:1px solid #dcecff;display:flex;align-items:center;gap:12px;
+}
+.ut-journey-note-icon{
+  width:38px;height:38px;border-radius:11px;background:#fff;color:#1677ff;
+  display:flex;align-items:center;justify-content:center;font-size:19px;flex:none;
+}
+.ut-journey-note strong{display:block;font-size:13px;color:#15345a}
+.ut-journey-note span{display:block;font-size:12px;color:#6b7b8e;margin-top:2px}
+.ut-engineer-card{
+  margin-top:13px;padding:15px;border:1px solid #e1e7ee;border-radius:15px;
+  display:flex;align-items:center;gap:13px;background:#fff;
+}
+.ut-engineer-icon{
+  width:46px;height:46px;border-radius:13px;background:#f1f6fc;color:#1769d1;
+  display:flex;align-items:center;justify-content:center;font-size:21px;flex:none;
+}
+.ut-engineer-copy{flex:1;min-width:0}
+.ut-engineer-copy strong{display:block;font-size:14px;color:#1c2d45}
+.ut-engineer-copy span{display:block;font-size:12px;color:#728096;margin-top:3px}
+.ut-notify-btn{
+  border:0;border-radius:10px;padding:10px 13px;background:#edf5ff;color:#1769d1;
+  font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap;
+}
+@keyframes utPulse{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.06)}
+}
+@media(max-width:760px){
+  #trackServiceModal .ut-track-modal-card{padding:18px;border-radius:18px}
+  .ut-journey-track{grid-template-columns:repeat(3,minmax(0,1fr));row-gap:24px}
+  .ut-journey-step::before{display:none}
+}
+@media(max-width:430px){
+  .ut-journey-track{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ut-journey{padding:16px 10px}
+  .ut-journey-head{align-items:flex-start;flex-direction:column}
+  .ut-engineer-card{align-items:flex-start;flex-wrap:wrap}
+}
+</style>
+<script>
+function renderBookingStatusTimeline(container, booking){
+  if(!container)return;
+  const status=typeof booking==='string'?booking:(booking?.status||'Pending');
+  const steps=[
+    ["Booked","booked"],["Confirmed","confirmed"],["Engineer Assigned","engineer_assigned"],
+    ["Engineer On The Way","on_the_way"],["Service Started","service_started"],["Completed","completed"]
+  ];
+  const normalized=String(status).toLowerCase().replace(/[\s-]+/g,"_");
+  const aliases={pending:"booked",confirmed:"confirmed",assigned:"engineer_assigned",
+    on_the_way:"on_the_way",arrived:"service_started",service_started:"service_started",
+    in_progress:"service_started",completed:"completed",closed:"completed"};
+  const current=aliases[normalized]||normalized;
+  const idx=Math.max(0,steps.findIndex(s=>s[1]===current));
+  const timeline='<div class="ut-booking-timeline-title">Service Journey</div><div class="ut-timeline-track">'+
+    steps.map((s,i)=>'<div class="ut-timeline-step '+(i<idx?'done':i===idx?'current':'')+'"><div class="ut-timeline-dot">'+(i<idx?'✓':i+1)+'</div><div>'+s[0]+'</div></div>').join('')+
+    '</div>';
+  container.innerHTML='<div class="ut-booking-timeline">'+timeline+'</div>';
+}
+</script>
+<div id="trackServiceModal" class="ut-track-modal" aria-hidden="true">
+  <div class="ut-track-modal-card" role="dialog" aria-modal="true">
+    <div class="ut-track-modal-head">
+      <div><div class="eyebrow">LIVE SERVICE TRACKING</div><h3 id="trackModalTitle">Service</h3><div id="trackModalStatus" class="status-pill warn" style="display:inline-block;margin-top:5px">—</div></div>
+      <button type="button" class="ut-track-close" onclick="closeTrackServiceModal()" aria-label="Close">×</button>
+    </div>
+    <div id="trackModalBody"></div>
+    <div id="trackModalTimeline" class="ut-track-status-host"></div>
+    <div id="trackModalEngineer"></div>
+  </div>
+</div>
+
+<script>
+function getRunningBookings(){
+  return (historyRows||[]).filter(b=>!['Closed','Cancelled'].includes(b.status));
+}
+function renderRunningBookings(){
+  const grid=document.getElementById('runningBookingGrid');
+  if(!grid)return;
+  const rows=getRunningBookings();
+  if(!rows.length){grid.innerHTML='<div class="ut-track-empty" style="grid-column:1/-1">No running bookings found.</div>';return;}
+  grid.innerHTML=rows.map(b=>`<button type="button" class="ut-running-card" onclick="openTrackBooking('${encodeURIComponent(b.booking_code)}')">
+    <div class="code">${esc(b.booking_code||'—')}</div>
+    <div class="service">${esc(b.service||'Service')}</div>
+    <div class="meta">${esc(b.date||'—')} • ${esc(b.time||'—')}<br>${esc(b.engineer||'Engineer not assigned')}</div>
+    <span class="status">${esc(b.status||'Pending')}</span>
+  </button>`).join('');
+}
+async function searchTrackBooking(){
+  const q=(document.getElementById('trackBookingSearch')?.value||'').trim().toLowerCase();
+  const msg=document.getElementById('trackSearchMessage');
+  if(msg)msg.textContent='';
+  if(!q){renderRunningBookings();return;}
+  const match=getRunningBookings().find(b=>(b.booking_code||'').toLowerCase()===q);
+  if(!match){if(msg)msg.textContent='No running booking found with this Booking ID.';return;}
+  await openTrackBooking(encodeURIComponent(match.booking_code));
+}
+async function openTrackBooking(code){
+  bookingCode=decodeURIComponent(code);
+  const modal=document.getElementById('trackServiceModal'); if(!modal)return;
+  modal.classList.add('open'); modal.setAttribute('aria-hidden','false');
+  const title=document.getElementById('trackModalTitle'),body=document.getElementById('trackModalBody');
+  const st=document.getElementById('trackModalStatus'),tl=document.getElementById('trackModalTimeline'),en=document.getElementById('trackModalEngineer');
+  if(title)title.textContent='Loading…';
+  if(body)body.innerHTML='<div class="ut-track-empty">Loading live booking status…</div>';
+  if(tl)tl.innerHTML=''; if(en)en.innerHTML='';
+  try{
+    const b=await api('/api/bookings/'+encodeURIComponent(bookingCode));
+    const status=b.status||'Pending';
+    if(title)title.textContent=(b.service||'Service')+' • '+b.booking_code;
+    if(st){st.textContent=status.toUpperCase();st.className='status-pill '+(['Completed','Closed'].includes(status)?'good':status==='Cancelled'?'bad':'warn');}
+
+    let action='';
+    if(status==='Completed'){
+      action=`<div class="ut-track-action ut-track-approval">
+        <div class="ut-track-action-icon">✓</div>
+        <div class="ut-track-action-copy"><strong>Your service is done</strong>
+        <span>Our team has completed the service. Please review and approve the completed work to close this booking.</span></div>
+        <button class="ut-track-action-btn approval" type="button" onclick="confirmTrackService('${encodeURIComponent(b.booking_code)}',this)">Approve &amp; Close</button>
+      </div>`;
+    }else if(status==='Closed' && (b.payment_status||'Unpaid')!=='Paid'){
+      action=`<div class="ut-track-action ut-track-payment">
+        <div class="ut-track-action-icon">₹</div>
+        <div class="ut-track-action-copy"><strong>Your service is done</strong>
+        <span>Your booking is closed successfully. Payment is now ready to complete.</span></div>
+        <button class="ut-track-action-btn pay" type="button" onclick="payTrackService('${encodeURIComponent(b.booking_code)}',this)">Pay Now</button>
+      </div>`;
+    }else if(status==='Closed'){
+      action=`<div class="ut-track-action ut-track-paid">
+        <div class="ut-track-action-icon">✓</div>
+        <div class="ut-track-action-copy"><strong>Service completed &amp; payment received</strong>
+        <span>Thank you for choosing Unique Techno Solutions. Your booking is fully completed.</span></div>
+      </div>`;
+    }
+
+    if(body)body.innerHTML=`<div class="ut-track-detail-grid">
+      <div class="ut-track-detail"><small>Booking ID</small><b>${esc(b.booking_code||bookingCode)}</b></div>
+      <div class="ut-track-detail"><small>Service</small><b>${esc(b.service||'—')}</b></div>
+      <div class="ut-track-detail"><small>Service Type</small><b>${b.offer_id?'OFFER':'REGULAR'}</b></div>
+      <div class="ut-track-detail"><small>Date &amp; Time</small><b>${esc((b.date||'—')+' • '+(b.time||'—'))}</b></div>
+      <div class="ut-track-detail"><small>Address</small><b>${esc(b.address||'—')}</b></div>
+      <div class="ut-track-detail"><small>Payment</small><b>${esc(b.payment_status||'Unpaid')}</b></div>
+    </div>${action}`;
+
+    if(body && ['Completed','Closed'].includes(status)){
+      body.insertAdjacentHTML('beforeend',`<div class="ut-invoice-action"><button type="button" class="ut-track-action-btn invoice" onclick="downloadInvoice('${encodeURIComponent(b.booking_code||bookingCode)}',this)">⬇ Download Invoice</button><span>Download your service invoice for this completed booking.</span></div>`);
+    }
+    if(tl && typeof renderBookingStatusTimeline==='function')renderBookingStatusTimeline(tl,b);
+    if(en)en.innerHTML=`<div class="panel" style="margin-top:12px"><b>Engineer</b><div style="margin-top:6px;font-size:14px">${esc(b.engineer||'Not assigned')}${b.engineer_status?' • '+esc(b.engineer_status):''}</div></div>`;
+  }catch(e){console.error(e);if(body)body.innerHTML='<div class="ut-track-empty">Could not load this booking right now.</div>';}
+}
+function showServiceDonePopup(b,paid=false){
+  const popup=document.getElementById('serviceDonePopup');
+  if(!popup)return;
+  const id=popup.querySelector('[data-done-booking]');
+  const title=popup.querySelector('[data-done-title]');
+  const msg=popup.querySelector('[data-done-message]');
+  const pay=popup.querySelector('[data-done-pay]');
+  const utr=popup.querySelector('[data-done-utr]');
+  const utrWrap=popup.querySelector('[data-done-utr-wrap]');
+  const close=popup.querySelector('[data-done-close]');
+  if(id)id.textContent=b?.booking_code||bookingCode||'—';
+  if(paid || (b?.payment_status||'')==='Paid'){
+    if(title)title.textContent='Payment Successful!';
+    if(msg)msg.textContent='Your service is done and payment has been received successfully. Thank you for choosing Unique Techno Solutions.';
+    if(pay)pay.style.display='none';
+    if(utrWrap)utrWrap.style.display='block';
+    if(utr)utr.value=b?.payment_utr||utr.value||'';
+    if(utr)utr.readOnly=true;
+    if(utrWrap)utrWrap.querySelector('label')?.replaceChildren(document.createTextNode('Payment UTR / Transaction ID'));
+  }else{
+    if(title)title.textContent='Service Done. Thank You!';
+    if(msg)msg.textContent='Your service has been completed successfully. Enter your UTR / transaction ID below to record the payment.';
+    if(utrWrap)utrWrap.style.display='block';
+    if(utr){utr.value='';utr.readOnly=false;utr.placeholder='Enter UTR / Transaction ID';}
+    if(pay){
+      pay.style.display='inline-flex';pay.disabled=false;pay.textContent='Pay Now';
+      pay.onclick=()=>openPaymentGateway(encodeURIComponent(b?.booking_code||bookingCode));
+    }
+  }
+  if(close)close.onclick=()=>closeServiceDonePopup();
+  popup.classList.add('open'); popup.setAttribute('aria-hidden','false');
+}
+
+function closeServiceDonePopup(){
+  const popup=document.getElementById('serviceDonePopup');
+  if(popup){popup.classList.remove('open');popup.setAttribute('aria-hidden','true');}
+}
+async function confirmTrackService(code,btn){
+  const decoded=decodeURIComponent(code||bookingCode||'');
+  if(!decoded)return;
+  if(btn){btn.disabled=true;btn.textContent='Confirming…';}
+  try{
+    const b=await api('/api/bookings/'+encodeURIComponent(decoded)+'/confirm',{
+      method:'POST',body:JSON.stringify({customer_id:customer.id})
+    });
+    bookingCode=decoded;
+    showServiceDonePopup(b||{booking_code:decoded,status:'Closed',payment_status:'Unpaid'});
+    Promise.all([loadHistory(),loadNotifications()]).catch(()=>{});
+  }catch(e){
+    console.error('Service approval failed:',e);
+    alert(e?.message||'Could not approve this service. Please try again.');
+    if(btn){btn.disabled=false;btn.textContent='Approve & Close';}
+  }
+}
+
+function openPaymentGateway(code){
+  const decoded=decodeURIComponent(code||bookingCode||'');
+  if(!decoded)return;
+  bookingCode=decoded;
+  const b=(typeof historyRows!=='undefined'?(historyRows||[]).find(x=>x.booking_code===decoded):null)||{};
+  const m=document.getElementById('utPaymentGateway'); if(!m)return;
+  m.querySelector('[data-gw-booking]').textContent=b.booking_code||decoded;
+  m.querySelector('[data-gw-service]').textContent=b.service||'Service Payment';
+  m.querySelector('[data-gw-amount]').textContent='₹'+Number(b.amount||0).toLocaleString('en-IN');
+  m.querySelector('[data-gw-form]').style.display='block';
+  m.querySelector('[data-gw-processing]').style.display='none';
+  m.querySelector('[data-gw-success]').style.display='none';
+  m.querySelector('[data-gw-method="upi"]').classList.add('active');
+  m.querySelectorAll('[data-gw-method]').forEach((x,i)=>{if(i>0)x.classList.remove('active');});
+  m.classList.add('open'); m.setAttribute('aria-hidden','false');
+}
+function closePaymentGateway(){
+  const m=document.getElementById('utPaymentGateway');
+  if(m){m.classList.remove('open');m.setAttribute('aria-hidden','true');}
+}
+function selectGatewayMethod(method,el){
+  const m=document.getElementById('utPaymentGateway'); if(!m)return;
+  m.querySelectorAll('[data-gw-method]').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  m.querySelector('[data-gw-input-label]').textContent=method==='upi'?'UPI ID':method==='card'?'Card Number':'Bank Login ID';
+  m.querySelector('[data-gw-input]').placeholder=method==='upi'?'example@upi':method==='card'?'•••• •••• •••• ••••':'Customer / Login ID';
+}
+
+function showGatewaySuccess(b,utr){
+  // Payment gateway must disappear completely after successful payment.
+  // Show the same compact success popup used by the service-completion flow.
+  const m=document.getElementById('utPaymentGateway');
+  if(m){
+    m.querySelector('[data-gw-form]').style.display='none';
+    m.querySelector('[data-gw-processing]').style.display='none';
+    m.querySelector('[data-gw-success]').style.display='none';
+    m.classList.remove('open');
+    m.setAttribute('aria-hidden','true');
+  }
+  bookingCode=b?.booking_code||bookingCode;
+  showServiceDonePopup(b||{booking_code:bookingCode,payment_status:'Paid',payment_utr:utr},true);
+  if(typeof loadHistory==='function')loadHistory().catch(()=>{});
+}
+async function gatewayPay(){
+  const m=document.getElementById('utPaymentGateway'); if(!m)return;
+  const input=m.querySelector('[data-gw-input]');
+  if((input?.value||'').trim().length<3){alert('Please enter the payment details.');input?.focus();return;}
+  const method=m.querySelector('[data-gw-method].active')?.getAttribute('data-gw-method')||'upi';
+  m.querySelector('[data-gw-form]').style.display='none';
+  m.querySelector('[data-gw-processing]').style.display='block';
+  const utr='GW'+Date.now().toString(36).toUpperCase()+Math.random().toString(36).slice(2,6).toUpperCase();
+  try{
+    const b=await api('/api/bookings/'+encodeURIComponent(bookingCode)+'/pay',{
+      method:'POST',
+      body:JSON.stringify({customer_id:customer.id,utr:utr,gateway_method:method})
+    });
+    await Promise.all([loadHistory(),loadNotifications()]);
+    showGatewaySuccess(b||{booking_code:bookingCode,payment_id:'PAYMENT',payment_utr:utr},utr);
+  }catch(e){
+    m.querySelector('[data-gw-processing]').style.display='none';
+    m.querySelector('[data-gw-form]').style.display='block';
+    alert(e?.message||'Payment could not be completed.');
+  }
+}
+
+function closeTrackServiceModal(){
+  const modal=document.getElementById('trackServiceModal');
+  if(modal){modal.classList.remove('open');modal.setAttribute('aria-hidden','true');}
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeTrackServiceModal();});
+</script>
+
+<script>
+if(!window._utTrackLoadHistory){
+  window._utTrackLoadHistory=true;
+  const _utTrackLoadHistory=window.loadHistory;
+  window.loadHistory=async function(){const r=await _utTrackLoadHistory.apply(this,arguments);renderRunningBookings();return r;};
+}
+</script>
+
+<div id="serviceDonePopup" class="ut-done-popup" aria-hidden="true">
+  <div class="ut-done-backdrop" onclick="closeServiceDonePopup()"></div>
+  <div class="ut-done-card" role="dialog" aria-modal="true" aria-labelledby="donePopupTitle">
+    <button class="ut-done-x" type="button" onclick="closeServiceDonePopup()">×</button>
+    <div class="ut-done-check">✓</div>
+    <div class="ut-done-kicker">SERVICE COMPLETED</div>
+    <h3 id="donePopupTitle" data-done-title>Service Done. Thank You!</h3>
+    <div class="ut-done-booking">Booking ID: <strong data-done-booking>—</strong></div>
+    <p data-done-message>Your service has been completed successfully. You can now make the payment.</p>
+    <div class="ut-done-actions">
+      <button class="ut-done-close" type="button" data-done-close>Close</button>
+      <button class="ut-done-pay" type="button" data-done-pay>Pay Now</button>
+    </div>
+  </div>
+</div>
+
+<div id="utPaymentGateway" class="ut-gateway" aria-hidden="true">
+  <div class="ut-gw-backdrop" onclick="closePaymentGateway()"></div>
+  <div class="ut-gw-card">
+    <button class="ut-gw-x" type="button" onclick="closePaymentGateway()">×</button>
+    <div class="ut-gw-brand"><span>U</span><div><strong>Unique Pay</strong><small>Secure Payment Gateway</small></div></div>
+    <div class="ut-gw-progress"><span class="active">1</span><i></i><span>2</span><i></i><span>3</span></div>
+    <div data-gw-form>
+      <div class="ut-gw-kicker">SECURE CHECKOUT</div><h3>Complete your payment</h3>
+      <div class="ut-gw-summary">
+        <div><small>Booking ID</small><b data-gw-booking>—</b></div>
+        <div><small>Service</small><b data-gw-service>Service Payment</b></div>
+        <div><small>Amount</small><strong data-gw-amount>₹0</strong></div>
+      </div>
+      <div class="ut-gw-methods">
+        <button type="button" data-gw-method="upi" class="active" onclick="selectGatewayMethod('upi',this)">UPI</button>
+        <button type="button" data-gw-method="card" onclick="selectGatewayMethod('card',this)">Card</button>
+        <button type="button" data-gw-method="netbanking" onclick="selectGatewayMethod('netbanking',this)">Net Banking</button>
+      </div>
+      <label data-gw-input-label>UPI ID</label>
+      <input data-gw-input type="text" placeholder="example@upi" autocomplete="off">
+      <button class="ut-gw-pay" type="button" onclick="gatewayPay()">Pay Securely</button>
+      <div class="ut-gw-safe">🔒 Secure checkout • Your payment information is protected</div>
+    </div>
+    <div data-gw-processing class="ut-gw-state" style="display:none"><div class="ut-gw-spinner"></div><h3>Processing payment…</h3><p>Please wait while we confirm your payment.</p></div>
+    <div data-gw-success class="ut-gw-state success" style="display:none">
+      <div class="ut-gw-success-ring"><span>✓</span></div>
+      <div class="ut-gw-success-label">PAYMENT SUCCESSFUL</div>
+      <h3>Payment Successful!</h3>
+      <p>Your payment has been received successfully.</p>
+      <div class="ut-gw-success-amount" data-gw-success-amount>Payment Completed</div>
+      <div class="ut-gw-receipt">
+        <div><small>Booking ID</small><b data-gw-success-booking>—</b></div>
+        <div><small>Payment Reference</small><b data-gw-ref>—</b></div>
+        <div><small>UTR / Transaction ID</small><b data-gw-utr>—</b></div>
+      </div>
+      <button class="ut-gw-success-close" type="button" data-gw-success-close>Done</button>
+    </div>
+  </div>
+</div>
+
+<div id="profileChangeModal" class="ut-modal" aria-hidden="true" style="display:none"><div class="ut-modal-card"><button class="ut-modal-close" type="button" onclick="closeProfileChange()">×</button><div class="eyebrow">SECURITY VERIFICATION</div><h3 id="profileChangeTitle">Change contact</h3><p id="profileChangeInfo" style="font-size:11px;color:#68788e">An OTP will be sent to your registered mobile number.</p><label id="profileChangeValueLabel">New value</label><input id="profileChangeValue"><div id="profileChangeOtpBox" style="display:none"><label>OTP</label><input id="profileChangeOtp" maxlength="6" inputmode="numeric" placeholder="123456"><p style="font-size:10px;color:#777">OTP sent to your registered mobile. Prototype OTP: <b>123456</b></p></div><button id="profileChangeSendBtn" class="btn dark" type="button" onclick="sendProfileChangeOtp()">Send OTP to Mobile</button><button id="profileChangeVerifyBtn" class="btn dark" type="button" style="display:none;margin-top:8px" onclick="verifyProfileChangeOtp()">Verify & Update</button></div></div><div id="addressModal" class="ut-modal" aria-hidden="true" style="display:none"><div class="ut-modal-card"><button class="ut-modal-close" type="button" onclick="closeAddressModal()">×</button><div class="eyebrow">ADDRESS BOOK</div><h3 id="addressModalTitle">Add Address</h3><input type="hidden" id="addressEditId"><label>Address Label</label><input id="addressLabel" placeholder="Home / Office"><label>Area</label><input id="addressArea" placeholder="Area / Locality"><label>Pincode</label><input id="addressPincode" maxlength="6" inputmode="numeric" placeholder="6-digit pincode"><label>Full Address</label><textarea id="addressFull" placeholder="House / Flat, Road, Landmark..."></textarea><label style="display:flex;align-items:center;gap:8px;margin-top:8px"><input id="addressDefault" type="checkbox" style="width:auto"> Set as default address</label><button class="btn dark" style="margin-top:12px" type="button" onclick="saveAddress()">Save Address</button></div></div><!-- Common My Account floating control -->
+<div id="accountFab" class="account-fab" aria-label="My Account">
+  <button id="accountFabBtn" class="account-fab-btn" type="button" title="My Account">
+    <span id="accountFabAvatar" class="account-fab-avatar">◯</span>
+  </button>
+  <div id="accountMenu" class="account-menu" aria-hidden="true">
+    <div class="account-menu-head">
+      <div id="accountMenuAvatar" class="account-menu-avatar">C</div>
+      <div><b id="accountMenuName">Customer</b><small id="accountMenuPhone">My Account</small></div>
+    </div>
+    <button type="button" onclick="openAccountProfile()"><span>✎</span> Edit Profile</button>
+    <button type="button" onclick="triggerProfilePhoto()"><span>◉</span> Change DP</button>
+    <button type="button" onclick="openAccountProfile()"><span>◯</span> My Account</button>
+  </div>
+  <input id="profilePhotoInput" type="file" accept="image/*" style="display:none" onchange="changeProfilePhoto(this)">
+</div>
+<script>
+// Notification read controls: wire any existing floating-panel "Mark all read" button too.
+document.addEventListener('click',function(e){const b=e.target.closest('[data-mark-all-notifications-read]');if(b){e.preventDefault();markAllNotificationsRead();}});
+</script>
+</body></html>
