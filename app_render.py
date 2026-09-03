@@ -435,6 +435,11 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         p=urlparse(self.path).path; d=read_json(self); c=conn()
         try:
+            if p=='/api/customer/check-phone':
+                phone=re.sub(r'\D','',str(d.get('phone','')))[-10:]
+                if len(phone)!=10: return send_json(self,400,{'error':'Valid 10-digit phone required'})
+                r=c.execute('SELECT id FROM customers WHERE phone=?',(phone,)).fetchone()
+                return send_json(self,200,{'exists':bool(r)})
             if p=='/api/customer/login':
                 if str(d.get('otp','')) != '123456': return send_json(self,401,{'error':'Invalid OTP'})
                 phone=re.sub(r'\D','',str(d.get('phone','')))[-10:]

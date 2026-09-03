@@ -48,8 +48,19 @@ function sendLoginOtp(){
   document.getElementById('otp').value='';
   document.getElementById('otp').focus();
 }
-function sendSignupOtp(){
+async function sendSignupOtp(){
   if(!validPhone('signupPhone'))return alert('Enter a valid 10-digit mobile number.');
+  try{
+    const phone=document.getElementById('signupPhone').value;
+    const d=await api('/api/customer/check-phone',{method:'POST',body:JSON.stringify({phone})});
+    if(d.exists){
+      alert('This mobile number is already registered. Please Login instead.');
+      switchAuth('login');
+      const loginPhone=document.getElementById('loginPhone');
+      if(loginPhone) loginPhone.value=phone;
+      return;
+    }
+  }catch(e){return alert(e.message||'Unable to check mobile number. Please try again.');}
   document.getElementById('signupForm').style.display='none';
   document.getElementById('signupProfileStep').style.display='none';
   document.getElementById('otpMessage').textContent='Enter the 6-digit OTP sent to your mobile to continue creating your account.';
