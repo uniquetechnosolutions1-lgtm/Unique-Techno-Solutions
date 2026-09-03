@@ -271,7 +271,53 @@ body.customer-auth #home.screen.on ~ #accountFab{display:block!important}
 @media(max-width:760px){.account-fab{top:10px!important;right:12px!important}.account-fab-btn{width:42px!important;height:42px!important}.account-fab-avatar{width:36px!important;height:36px!important}}
 </style>
 </head><body>
-<section id="login" class="screen on"><div class="login"><div class="login-left"><div class="brand"><span class="mark">U</span><span>Unique Techno<small>SOLUTIONS</small></span></div><div class="eyebrow">ON-DEMAND TECHNICAL SERVICE</div><h1>Book a service.<br><span>We'll send an engineer.</span></h1><p>Login with your mobile number to browse services, book a professional engineer and track your service live.</p><div id="phoneStep"><div class="phone"><select><option>+91</option></select><input id="phone" maxlength="10" inputmode="numeric" placeholder="Mobile number"></div><button class="btn dark login-btn" onclick="sendOtp()">Continue with OTP →</button></div><div id="otpStep" class="otp"><div class="eyebrow">VERIFY MOBILE</div><input id="otp" maxlength="6" inputmode="numeric" placeholder="123456"><button class="btn dark login-btn" onclick="verify()">Verify & Continue →</button><p style="font-size:10px">Prototype OTP: <b>123456</b></p></div></div><div class="login-right"><div class="corp"><div class="eyebrow" style="color:#2aa8ff">SMART SERVICE NETWORK</div><h2>Technology that<br><b>protects & connects.</b></h2><p>CCTV • NETWORKING • IT INFRASTRUCTURE • AUTOMATION</p><div class="corp-grid"><div class="corp-card"><b>◉ CCTV & Security</b><span>Install • Repair • AMC</span></div><div class="corp-card"><b>⌁ Networking</b><span>Wi‑Fi • LAN • Fiber</span></div><div class="corp-card"><b>▣ IT Infrastructure</b><span>Laptop • Server • Workstation</span></div><div class="corp-card"><b>⚙ Automation</b><span>PLC • BMS • Smart Systems</span></div></div></div></div></div></section>
+<section id="login" class="screen on">
+  <div class="login auth-login-layout">
+    <div class="login-left auth-panel-left">
+      <div class="brand"><span class="mark">U</span><span>Unique Techno<small>SOLUTIONS</small></span></div>
+      <div class="eyebrow">ON-DEMAND TECHNICAL SERVICE</div>
+      <h1 id="authTitle">Welcome back.<br><span>Let's get started.</span></h1>
+      <p id="authSubtitle">Login with your registered mobile number to browse services, book a professional engineer and track your service live.</p>
+
+      <div class="auth-tabs" role="tablist" aria-label="Customer authentication">
+        <button id="loginTab" class="auth-tab active" type="button" onclick="switchAuth('login')">Login</button>
+        <button id="signupTab" class="auth-tab" type="button" onclick="switchAuth('signup')">Sign Up</button>
+      </div>
+
+      <div id="loginForm" class="auth-form">
+        <label class="auth-label">REGISTERED MOBILE NUMBER</label>
+        <div class="phone"><select aria-label="Country code"><option>+91</option></select><input id="loginPhone" maxlength="10" inputmode="numeric" autocomplete="tel" placeholder="10-digit mobile number"></div>
+        <button class="btn dark login-btn" type="button" onclick="sendLoginOtp()">Continue with OTP →</button>
+        <button class="auth-switch-link" type="button" onclick="switchAuth('signup')">New customer? <b>Create an account</b></button>
+      </div>
+
+      <div id="signupForm" class="auth-form" style="display:none">
+        <div class="auth-field"><label class="auth-label">FULL NAME</label><input id="signupName" maxlength="80" autocomplete="name" placeholder="Enter your full name"></div>
+        <div class="auth-field"><label class="auth-label">MOBILE NUMBER</label><div class="phone"><select aria-label="Country code"><option>+91</option></select><input id="signupPhone" maxlength="10" inputmode="numeric" autocomplete="tel" placeholder="10-digit mobile number"></div></div>
+        <div class="auth-field"><label class="auth-label">EMAIL <span>(OPTIONAL)</span></label><input id="signupEmail" maxlength="120" type="email" autocomplete="email" placeholder="you@example.com"></div>
+        <button class="btn dark login-btn" type="button" onclick="sendSignupOtp()">Create Account →</button>
+        <button class="auth-switch-link" type="button" onclick="switchAuth('login')">Already registered? <b>Login here</b></button>
+      </div>
+
+      <div id="otpStep" class="otp auth-otp-step">
+        <div class="eyebrow">VERIFY MOBILE</div>
+        <p id="otpMessage" class="auth-otp-message">Enter the 6-digit OTP sent to your mobile.</p>
+        <input id="otp" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="123456">
+        <button class="btn dark login-btn" type="button" onclick="verifyAuthOtp()">Verify & Continue →</button>
+        <button class="auth-back-link" type="button" onclick="backToAuthForm()">← Change mobile number</button>
+        <p class="auth-demo-note">Prototype OTP: <b>123456</b></p>
+      </div>
+    </div>
+    <div class="login-right">
+      <div class="corp">
+        <div class="eyebrow" style="color:#2aa8ff">SMART SERVICE NETWORK</div>
+        <h2>Technology that<br><b>protects & connects.</b></h2>
+        <p>CCTV • NETWORKING • IT INFRASTRUCTURE • AUTOMATION</p>
+        <div class="corp-grid"><div class="corp-card"><b>◉ CCTV & Security</b><span>Install • Repair • AMC</span></div><div class="corp-card"><b>⌁ Networking</b><span>Wi‑Fi • LAN • Fiber</span></div><div class="corp-card"><b>▣ IT Infrastructure</b><span>Laptop • Server • Workstation</span></div><div class="corp-card"><b>⚙ Automation</b><span>PLC • BMS • Smart Systems</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
 <aside id="appSidebar" aria-label="Customer navigation">
   <div class="side-brand"><span class="side-mark">U</span><div><b>UNIQUE</b><small>TECHNO SOLUTIONS</small></div></div>
   <div class="side-label">CUSTOMER PORTAL</div>
