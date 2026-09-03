@@ -532,8 +532,54 @@ function updateProfileCompletion(){
 }
 function renderProfile(){const n=(customer.name||'C').split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase();const av=document.getElementById('profileAvatar');if(av)av.textContent=n;document.getElementById('profileWelcome').textContent='Welcome, '+(customer.name||'Customer');document.getElementById('pName').value=customer.name||'';document.getElementById('pPhone').value=customer.phone||'';document.getElementById('pEmail').value=customer.email||'';const pa=document.getElementById('pArea');if(pa)pa.value=customer.area||'';const pp=document.getElementById('pPincode');if(pp)pp.value=customer.pincode||'';const pad=document.getElementById('pAddress');if(pad)pad.value=customer.address||'';const ba=document.getElementById('address');if(ba && customer.address)ba.value=customer.address;updateAccountControl();updateProfileCompletion();}
 async function saveAddress(){try{const area=(document.getElementById('pArea')?.value||'').trim();const pincode=(document.getElementById('pPincode')?.value||'').trim();const address=(document.getElementById('pAddress')?.value||'').trim();if(!area)throw Error('Area is required.');if(!/^\d{6}$/.test(pincode))throw Error('Enter a valid 6-digit pincode.');if(address.length<8)throw Error('Complete service address is required.');const updated=await api('/api/customer/'+customer.id+'/profile',{method:'PUT',body:JSON.stringify({name:customer.name,email:customer.email,area,pincode,address})});customer=updated;localStorage.setItem('customer',JSON.stringify(customer));updateProfileCompletion();toast('Address saved successfully.')}catch(e){alert(e.message)}}
-async function loadNotifications(){if(!customer?.id)return;try{notifications=await api('/api/customer/'+customer.id+'/notifications');renderNotifications();document.getElementById('notifCount').textContent=notifications.filter(n=>!n.is_read).length||''}catch(e){document.getElementById('notificationList').innerHTML='<div class="notification-empty">No notifications.</div>'}}
-function renderNotifications(){const box=document.getElementById('notificationList');if(!notifications.length){box.innerHTML='<div class="notification-empty">No notifications.</div>';return}box.innerHTML=notifications.map(n=>`<div class="notification ${n.is_read?'':'unread'}"><b>${esc(n.title)}</b><span>${esc(n.message)}</span><span>${esc(n.created_at)}</span></div>`).join('')}
+async function loadNotifications(){
+  if(!customer?.id)return;
+  try{
+    notifications=await api('/api/customer/'+customer.id+'/notifications');
+    renderNotifications();
+    updateNotificationBadge();
+  }catch(e){
+    const a=document.getElementById('notificationList');if(a)a.innerHTML='<div class="notification-empty">No notifications.</div>';
+    const b=document.getElementById('notifPanelList');if(b)b.innerHTML='<div class="notif-empty">No notifications.</div>';
+  }
+}
+function updateNotificationBadge(){
+  const unread=notifications.filter(n=>!Number(n.is_read)).length;
+  ['notifCount','sideNotifCount','notifFabBadge'].forEach(id=>{
+    const e=document.getElementById(id);if(e){e.textContent=unread>99?'99+':(unread||'');if(id==='notifFabBadge')e.style.display=unread?'block':'none';}
+  });
+  const sub=document.getElementById('notifPanelSub');if(sub)sub.textContent=unread?unread+' unread update'+(unread===1?'':'s'):'All caught up';
+}
+function renderNotificationItems(targetId,cls){
+  const box=document.getElementById(targetId);if(!box)return;
+  if(!notifications.length){box.innerHTML='<div class="'+cls+'">You are all caught up. No notifications yet.</div>';return}
+  box.innerHTML=notifications.map(n=>`<div class="${cls} ${Number(n.is_read)?'':'unread'}" onclick="openNotificationItem(${Number(n.id||0)},'${esc(n.booking_id||'')}')"><b>${esc(n.title)}</b><span>${esc(n.message)}</span><time>${esc(n.created_at)}</time></div>`).join('');
+}
+function renderNotifications(){
+  renderNotificationItems('notificationList','notification');
+  renderNotificationItems('notifPanelList','notif-item');
+}
+async function markNotificationRead(id){
+  if(!id)return;
+  try{await api('/api/customer/'+customer.id+'/notifications/'+id+'/read',{method:'POST'});const n=notifications.find(x=>Number(x.id)===Number(id));if(n)n.is_read=1;renderNotifications();updateNotificationBadge();}catch(e){}
+}
+function openNotificationItem(id,bookingId){
+  markNotificationRead(id);closeNotificationPanel();
+  if(bookingId){bookingCode=bookingId;show('history','bookings');loadHistory();}
+}
+function toggleNotificationPanel(e){
+  if(e){e.preventDefault();e.stopPropagation();}
+  const p=document.getElementById('notifPanel');if(!p)return;
+  const open=p.classList.toggle('open');p.setAttribute('aria-hidden',open?'false':'true');
+  if(open)loadNotifications();
+}
+function closeNotificationPanel(){const p=document.getElementById('notifPanel');if(p){p.classList.remove('open');p.setAttribute('aria-hidden','true')}}
+async function markAllNotificationsRead(){
+  if(!customer?.id)return;
+  try{await api('/api/customer/'+customer.id+'/notifications/read-all',{method:'POST'});notifications.forEach(n=>n.is_read=1);renderNotifications();updateNotificationBadge();}catch(e){}
+}
+document.addEventListener('click',e=>{const f=document.getElementById('notifFab');if(f&&!f.contains(e.target))closeNotificationPanel()});
+setInterval(()=>{if(customer?.id)loadNotifications()},15000);
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',2200)}
 async function initCustomerAuth(){try{const d=await api('/api/customer/session');if(d.customer){customer=d.customer;document.body.classList.add('customer-auth');await Promise.all([loadServices(),loadOffers(),loadHistory(),loadProfile(),loadNotifications()]);show('home');return}}catch(e){} document.body.classList.remove('customer-auth');show('login')}
 initCustomerAuth();
