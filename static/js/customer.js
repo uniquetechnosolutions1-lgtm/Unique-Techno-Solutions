@@ -430,6 +430,64 @@ async function openPastBooking(code){show('history','bookings');await loadHistor
 function openUpcomingBooking(code){bookingCode=decodeURIComponent(code);show('track');refreshTracking();}
 async function loadProfile(){if(!customer?.id)return;try{customer=await api('/api/customer/'+customer.id+'/profile');renderProfile()}catch(e){renderProfile()}}
 function renderProfile(){const n=(customer.name||'C').split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase();document.getElementById('profileAvatar').textContent=n;document.getElementById('profileWelcome').textContent='Welcome, '+(customer.name||'Customer');document.getElementById('pName').value=customer.name||'';document.getElementById('pPhone').value=customer.phone||'';document.getElementById('pEmail').value=customer.email||'';document.getElementById('pArea').value=customer.area||'';document.getElementById('pAddress').value=customer.address||'';updateAccountControl()}
+let profileChangeMode='';
+
+function openProfileChange(mode){
+  profileChangeMode=mode;
+  const title=document.getElementById('profileChangeTitle');
+  const label=document.getElementById('profileChangeValueLabel');
+  const input=document.getElementById('profileChangeValue');
+  const otpBox=document.getElementById('profileChangeOtpBox');
+  const sendBtn=document.getElementById('profileChangeSendBtn');
+  if(!title||!label||!input)return;
+  title.textContent=mode==='email'?'Change Email':'Change Mobile Number';
+  label.textContent=mode==='email'?'New Email':'New Mobile Number';
+  input.type=mode==='email'?'email':'tel';
+  input.maxLength=mode==='email'?120:10;
+  input.inputMode=mode==='email'?'email':'numeric';
+  input.placeholder=mode==='email'?'you@example.com':'10-digit mobile number';
+  input.value=mode==='email'?(customer?.email||''):(customer?.phone||'');
+  otpBox.style.display='none';
+  sendBtn.disabled=false;
+  sendBtn.textContent='Send OTP to Mobile →';
+  document.getElementById('profileChangeOtp').value='';
+  const m=document.getElementById('profileChangeModal'); m.style.display='flex'; m.setAttribute('aria-hidden','false');
+  setTimeout(()=>input.focus(),80);
+}
+
+function closeProfileChange(){
+  const m=document.getElementById('profileChangeModal'); if(m){m.style.display='none';m.setAttribute('aria-hidden','true');}
+}
+
+async function sendProfileChangeOtp(){
+  try{
+    if(!customer?.id)throw Error('Please login again.');
+    const value=document.getElementById('profileChangeValue').value.trim();
+    if(profileChangeMode==='email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) throw Error('Enter a valid email address.');
+    if(profileChangeMode==='mobile' && !/^\d{10}$/.test(value.replace(/\D/g,''))) throw Error('Enter a valid 10-digit mobile number.');
+    const d=await api('/api/customer/'+customer.id+'/profile-change-otp',{method:'POST',body:JSON.stringify({type:profileChangeMode,value})});
+    document.getElementById('profileChangeOtpBox').style.display='block';
+    document.getElementById('profileChangeSendBtn').textContent='OTP Sent ✓';
+    document.getElementById('profileChangeSendBtn').disabled=true;
+    document.getElementById('profileChangeInfo').textContent='OTP has been sent to your registered mobile number '+(customer.phone||'')+'.';
+    toast(d.message||'OTP sent to your mobile number.');
+    setTimeout(()=>document.getElementById('profileChangeOtp')?.focus(),80);
+  }catch(e){alert(e.message)}
+}
+
+async function verifyProfileChangeOtp(){
+  try{
+    const value=document.getElementById('profileChangeValue').value.trim();
+    const otp=document.getElementById('profileChangeOtp').value.trim();
+    if(!/^\d{6}$/.test(otp))throw Error('Enter the 6-digit OTP.');
+    const d=await api('/api/customer/'+customer.id+'/profile-change-otp',{method:'PUT',body:JSON.stringify({type:profileChangeMode,value,otp})});
+    customer=d.customer||d;
+    renderProfile();
+    closeProfileChange();
+    toast(profileChangeMode==='email'?'Email updated successfully.':'Mobile number updated successfully.');
+  }catch(e){alert(e.message)}
+}
+
 async function saveProfile(){try{customer=await api('/api/customer/'+customer.id+'/profile',{method:'PUT',body:JSON.stringify({name:document.getElementById('pName').value,email:document.getElementById('pEmail').value,area:document.getElementById('pArea').value,address:document.getElementById('pAddress').value})});renderProfile();toast('Profile updated.')}catch(e){alert(e.message)}}
 async function loadNotifications(){if(!customer?.id)return;try{notifications=await api('/api/customer/'+customer.id+'/notifications');renderNotifications();document.getElementById('notifCount').textContent=notifications.filter(n=>!n.is_read).length||''}catch(e){document.getElementById('notificationList').innerHTML='<div class="notification-empty">No notifications.</div>'}}
 function renderNotifications(){const box=document.getElementById('notificationList');if(!notifications.length){box.innerHTML='<div class="notification-empty">No notifications.</div>';return}box.innerHTML=notifications.map(n=>`<div class="notification ${n.is_read?'':'unread'}"><b>${esc(n.title)}</b><span>${esc(n.message)}</span><span>${esc(n.created_at)}</span></div>`).join('')}
