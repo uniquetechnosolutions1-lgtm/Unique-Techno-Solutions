@@ -435,24 +435,29 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         p=urlparse(self.path).path; d=read_json(self); c=conn()
         try:
-            if p=='/api/customer/signup':
-                if str(d.get('otp','')) != '123456': return send_json(self,401,{'error':'Invalid OTP'})
-                phone=re.sub(r'\D','',str(d.get('phone','')))[-10:]
-                if len(phone)!=10: return send_json(self,400,{'error':'Valid 10-digit phone required'})
-                name=str(d.get('name','')).strip(); email=str(d.get('email','')).strip(); area=str(d.get('area','')).strip(); address=str(d.get('address','')).strip()
-                if len(name)<2: return send_json(self,400,{'error':'Please enter your full name'})
-                if email and not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$',email): return send_json(self,400,{'error':'Please enter a valid email address'})
-                r=c.execute('SELECT id FROM customers WHERE phone=?',(phone,)).fetchone()
-                if r: return send_json(self,409,{'error':'This mobile number is already registered. Please use Login.'})
-                cur=c.execute('INSERT INTO customers(name,phone,area,email,address,created_at) VALUES(?,?,?,?,?,?)',(name,phone,area,email,address,now())); cid=cur.lastrowid; c.commit()
-                return send_json(self,201,{'customer':dict(c.execute('SELECT * FROM customers WHERE id=?',(cid,)).fetchone())}, set_cookie=customer_cookie(cid))
             if p=='/api/customer/login':
                 if str(d.get('otp','')) != '123456': return send_json(self,401,{'error':'Invalid OTP'})
                 phone=re.sub(r'\D','',str(d.get('phone','')))[-10:]
                 if len(phone)!=10: return send_json(self,400,{'error':'Valid 10-digit phone required'})
                 r=c.execute('SELECT * FROM customers WHERE phone=?',(phone,)).fetchone()
-                if not r: return send_json(self,404,{'error':'Account not found. Please Sign Up first.'})
-                return send_json(self,200,{'customer':dict(r)}, set_cookie=customer_cookie(r['id']))
+                if not r: return send_json(self,404,{'error':'No account found for this mobile number. Please Sign Up first.','code':'CUSTOMER_NOT_FOUND'})
+                cid=r['id']
+                return send_json(self,200,{'customer':dict(r)}, set_cookie=customer_cookie(cid))
+            if p=='/api/customer/signup':
+                if str(d.get('otp','')) != '123456': return send_json(self,401,{'error':'Invalid OTP'})
+                phone=re.sub(r'\D','',str(d.get('phone','')))[-10:]
+                name=str(d.get('name','')).strip()
+                email=str(d.get('email','')).strip().lower()
+                address=str(d.get('address','')).strip()
+                if len(phone)!=10: return send_json(self,400,{'error':'Valid 10-digit phone required'})
+                if len(name)<2: return send_json(self,400,{'error':'Full name is required'})
+                if not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$',email): return send_json(self,400,{'error':'Valid email address is required'})
+                if len(address)<8: return send_json(self,400,{'error':'Complete service address is required'})
+                existing=c.execute('SELECT id FROM customers WHERE phone=?',(phone,)).fetchone()
+                if existing: return send_json(self,409,{'error':'An account already exists with this mobile number. Please Login instead.','code':'CUSTOMER_EXISTS'})
+                cur=c.execute('INSERT INTO customers(name,phone,area,email,address,created_at) VALUES(?,?,?,?,?,?)',(name,phone,'',email,address,now()))
+                cid=cur.lastrowid;c.commit()
+                return send_json(self,201,{'customer':dict(c.execute('SELECT * FROM customers WHERE id=?',(cid,)).fetchone())}, set_cookie=customer_cookie(cid))
             if p=='/api/customer/logout':
                 clear_customer_cookie(self)
                 return send_json(self,200,{'ok':True}, set_cookie='uts_customer_session=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax')

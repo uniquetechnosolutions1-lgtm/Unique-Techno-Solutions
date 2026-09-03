@@ -269,6 +269,10 @@ body.customer-auth #home.screen.on ~ #accountFab{display:block!important}
 .account-fab-avatar{width:38px!important;height:38px!important;border-radius:10px!important}
 .account-menu{top:50px!important}
 @media(max-width:760px){.account-fab{top:10px!important;right:12px!important}.account-fab-btn{width:42px!important;height:42px!important}.account-fab-avatar{width:36px!important;height:36px!important}}
+
+<style id="auth-flow-styles">
+.auth-field{margin-bottom:12px}.auth-field .auth-label{display:block;margin-bottom:6px}.auth-form textarea,.auth-form input{width:100%;box-sizing:border-box}.auth-form textarea{min-height:76px;resize:vertical;padding:13px 14px;border:1px solid #d6e0eb;border-radius:12px;font:inherit;color:#132b49;background:#fff}.auth-field .auth-label span{font-size:9px;color:#8a98a8;font-weight:700}.auth-step-note{font-size:12px;line-height:1.55;color:#718198;margin:-2px 0 14px}.auth-success-note{background:#f2f8ff;border:1px solid #d8e9fb;color:#174d80;border-radius:12px;padding:10px 12px;font-size:11px;line-height:1.45;margin-bottom:13px}
+</style>
 </style>
 </head><body>
 <section id="login" class="screen on">
@@ -292,10 +296,9 @@ body.customer-auth #home.screen.on ~ #accountFab{display:block!important}
       </div>
 
       <div id="signupForm" class="auth-form" style="display:none">
-        <div class="auth-field"><label class="auth-label">FULL NAME</label><input id="signupName" maxlength="80" autocomplete="name" placeholder="Enter your full name"></div>
+        <div class="auth-step-note">Step 1 of 3 • Enter your mobile number. We will verify it with an OTP.</div>
         <div class="auth-field"><label class="auth-label">MOBILE NUMBER</label><div class="phone"><select aria-label="Country code"><option>+91</option></select><input id="signupPhone" maxlength="10" inputmode="numeric" autocomplete="tel" placeholder="10-digit mobile number"></div></div>
-        <div class="auth-field"><label class="auth-label">EMAIL <span>(OPTIONAL)</span></label><input id="signupEmail" maxlength="120" type="email" autocomplete="email" placeholder="you@example.com"></div>
-        <button class="btn dark login-btn" type="button" onclick="sendSignupOtp()">Create Account →</button>
+        <button class="btn dark login-btn" type="button" onclick="sendSignupOtp()">Continue with OTP →</button>
         <button class="auth-switch-link" type="button" onclick="switchAuth('login')">Already registered? <b>Login here</b></button>
       </div>
 
@@ -306,6 +309,17 @@ body.customer-auth #home.screen.on ~ #accountFab{display:block!important}
         <button class="btn dark login-btn" type="button" onclick="verifyAuthOtp()">Verify & Continue →</button>
         <button class="auth-back-link" type="button" onclick="backToAuthForm()">← Change mobile number</button>
         <p class="auth-demo-note">Prototype OTP: <b>123456</b></p>
+      </div>
+
+      <div id="signupProfileStep" class="auth-form" style="display:none">
+        <div class="eyebrow">CREATE PROFILE</div>
+        <div class="auth-step-note">Step 3 of 3 • Your mobile is verified. Complete these details to create your account.</div>
+        <div class="auth-success-note">✓ Mobile number verified successfully.</div>
+        <div class="auth-field"><label class="auth-label">FULL NAME</label><input id="signupName" maxlength="80" autocomplete="name" placeholder="Enter your full name"></div>
+        <div class="auth-field"><label class="auth-label">EMAIL <span>(REQUIRED)</span></label><input id="signupEmail" maxlength="120" type="email" autocomplete="email" placeholder="you@example.com" required></div>
+        <div class="auth-field"><label class="auth-label">SERVICE ADDRESS <span>(REQUIRED)</span></label><textarea id="signupAddress" maxlength="300" autocomplete="street-address" placeholder="House / Flat, Street, Area, City, PIN"></textarea></div>
+        <button class="btn dark login-btn" type="button" onclick="completeSignup()">Create Profile →</button>
+        <button class="auth-back-link" type="button" onclick="backToSignupOtp()">← Back to OTP</button>
       </div>
     </div>
     <div class="login-right">
@@ -512,7 +526,7 @@ body.customer-auth #home.screen.on ~ #accountFab{display:block!important}
   </div>
 </div>
 <div id="toast" style="position:fixed;right:15px;bottom:15px;background:#11151d;color:#fff;padding:11px 13px;border-radius:9px;font-size:10px;display:none"></div>
-<script src="/static/js/customer.js?v=auth-fix-20260903"></script><div id="bookingSuccessModal" class="booking-success-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="bookingSuccessTitle">
+<script src="/static/js/customer.js?v=auth-flow-20260903"></script><div id="bookingSuccessModal" class="booking-success-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="bookingSuccessTitle">
   <div class="booking-success-backdrop" onclick="closeBookingSuccess()"></div>
   <div class="booking-success-card">
     <button class="booking-success-close" type="button" aria-label="Close" onclick="closeBookingSuccess()">×</button>

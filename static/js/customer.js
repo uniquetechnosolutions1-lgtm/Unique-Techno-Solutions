@@ -27,12 +27,78 @@ const show=(id,navKey)=>{
   window.scrollTo({top:0,behavior:'smooth'});if(id!=='home'&&typeof closeAccountMenu==='function')closeAccountMenu();
 };
 let authMode='login';
-function switchAuth(mode){authMode=mode;document.getElementById('loginTab')?.classList.toggle('active',mode==='login');document.getElementById('signupTab')?.classList.toggle('active',mode==='signup');document.getElementById('loginForm').style.display=mode==='login'?'block':'none';document.getElementById('signupForm').style.display=mode==='signup'?'block':'none';document.getElementById('otpStep').classList.remove('on');document.getElementById('authTitle').innerHTML=mode==='login'?"Welcome back.<br><span>Let's get started.</span>":'Create your account.<br><span>Service starts here.</span>';document.getElementById('authSubtitle').textContent=mode==='login'?'Login with your registered mobile number to browse services, book a professional engineer and track your service live.':'Sign up with your name and mobile number to book services, manage bookings and receive service updates.'}
+function switchAuth(mode){
+  authMode=mode;
+  document.getElementById('loginTab')?.classList.toggle('active',mode==='login');
+  document.getElementById('signupTab')?.classList.toggle('active',mode==='signup');
+  document.getElementById('loginForm').style.display=mode==='login'?'block':'none';
+  document.getElementById('signupForm').style.display=mode==='signup'?'block':'none';
+  document.getElementById('otpStep').classList.remove('on');
+  document.getElementById('signupProfileStep').style.display='none';
+  document.getElementById('authTitle').innerHTML=mode==='login'?"Welcome back.<br><span>Let's get started.</span>":'Create your account.<br><span>Service starts here.</span>';
+  document.getElementById('authSubtitle').textContent=mode==='login'?'Login with your registered mobile number to browse services, book a professional engineer and track your service live.':'Create your account using your mobile number, OTP, name, email and service address.';
+}
 function validPhone(id){const v=(document.getElementById(id)?.value||'').replace(/\D/g,'');return v.length===10}
-function sendLoginOtp(){if(!validPhone('loginPhone'))return alert('Enter a valid 10-digit mobile number.');document.getElementById('loginForm').style.display='none';document.getElementById('otpMessage').textContent='Enter the 6-digit OTP for your registered mobile number.';document.getElementById('otpStep').classList.add('on');document.getElementById('otp').value='';document.getElementById('otp').focus()}
-function sendSignupOtp(){const name=document.getElementById('signupName').value.trim();if(name.length<2)return alert('Please enter your full name.');if(!validPhone('signupPhone'))return alert('Enter a valid 10-digit mobile number.');document.getElementById('signupForm').style.display='none';document.getElementById('otpMessage').textContent='Verify your mobile to create your Unique Techno Solutions account.';document.getElementById('otpStep').classList.add('on');document.getElementById('otp').value='';document.getElementById('otp').focus()}
-function backToAuthForm(){document.getElementById('otpStep').classList.remove('on');document.getElementById(authMode==='login'?'loginForm':'signupForm').style.display='block'}
-async function verifyAuthOtp(){const otp=document.getElementById('otp').value.trim();if(otp!=='123456')return alert('Prototype OTP is 123456.');try{let payload;if(authMode==='login'){payload={phone:document.getElementById('loginPhone').value,otp}}else{payload={phone:document.getElementById('signupPhone').value,name:document.getElementById('signupName').value.trim(),email:document.getElementById('signupEmail').value.trim(),otp}}const d=await api(authMode==='login'?'/api/customer/login':'/api/customer/signup',{method:'POST',body:JSON.stringify(payload)});customer=d.customer;document.body.classList.add('customer-auth');await Promise.all([loadServices(),loadOffers(),loadHistory(),loadProfile(),loadNotifications()]);renderDashboard();window.history.replaceState({},'', '/customer/');show('home');updateAccountControl()}catch(e){alert(e.message)}}
+function sendLoginOtp(){
+  if(!validPhone('loginPhone'))return alert('Enter a valid 10-digit mobile number.');
+  document.getElementById('loginForm').style.display='none';
+  document.getElementById('signupProfileStep').style.display='none';
+  document.getElementById('otpMessage').textContent='Enter the 6-digit OTP for your registered mobile number.';
+  document.getElementById('otpStep').classList.add('on');
+  document.getElementById('otp').value='';
+  document.getElementById('otp').focus();
+}
+function sendSignupOtp(){
+  if(!validPhone('signupPhone'))return alert('Enter a valid 10-digit mobile number.');
+  document.getElementById('signupForm').style.display='none';
+  document.getElementById('signupProfileStep').style.display='none';
+  document.getElementById('otpMessage').textContent='Enter the 6-digit OTP sent to your mobile to continue creating your account.';
+  document.getElementById('otpStep').classList.add('on');
+  document.getElementById('otp').value='';
+  document.getElementById('otp').focus();
+}
+function backToAuthForm(){
+  document.getElementById('otpStep').classList.remove('on');
+  document.getElementById('signupProfileStep').style.display='none';
+  document.getElementById(authMode==='login'?'loginForm':'signupForm').style.display='block';
+}
+function backToSignupOtp(){
+  document.getElementById('signupProfileStep').style.display='none';
+  document.getElementById('otpStep').classList.add('on');
+}
+async function verifyAuthOtp(){
+  const otp=document.getElementById('otp').value.trim();
+  if(otp!=='123456')return alert('Prototype OTP is 123456.');
+  if(authMode==='signup'){
+    document.getElementById('otpStep').classList.remove('on');
+    document.getElementById('signupProfileStep').style.display='block';
+    document.getElementById('signupName').focus();
+    return;
+  }
+  try{
+    const payload={phone:document.getElementById('loginPhone').value,otp};
+    const d=await api('/api/customer/login',{method:'POST',body:JSON.stringify(payload)});
+    customer=d.customer;
+    document.body.classList.add('customer-auth');
+    await Promise.all([loadServices(),loadOffers(),loadHistory(),loadProfile(),loadNotifications()]);
+    renderDashboard();window.history.replaceState({},'', '/customer/');show('home');updateAccountControl();
+  }catch(e){alert(e.message)}
+}
+async function completeSignup(){
+  const name=document.getElementById('signupName').value.trim();
+  const email=document.getElementById('signupEmail').value.trim();
+  const address=document.getElementById('signupAddress').value.trim();
+  if(name.length<2)return alert('Please enter your full name.');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return alert('Please enter a valid email address.');
+  if(address.length<8)return alert('Please enter your complete service address.');
+  try{
+    const d=await api('/api/customer/signup',{method:'POST',body:JSON.stringify({phone:document.getElementById('signupPhone').value,otp:document.getElementById('otp').value.trim(),name,email,address})});
+    customer=d.customer;
+    document.body.classList.add('customer-auth');
+    await Promise.all([loadServices(),loadOffers(),loadHistory(),loadProfile(),loadNotifications()]);
+    renderDashboard();window.history.replaceState({},'', '/customer/');show('home');updateAccountControl();toast('Account created successfully. Welcome to Unique Techno Solutions.');
+  }catch(e){alert(e.message)}
+}
 // Backward-compatible aliases for any older UI handlers.
 function sendOtp(){sendLoginOtp()}
 async function verify(){await verifyAuthOtp()}
