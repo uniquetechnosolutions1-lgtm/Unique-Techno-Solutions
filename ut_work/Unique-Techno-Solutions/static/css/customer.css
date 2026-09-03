@@ -1703,3 +1703,145 @@ body.customer-auth #servicesPage .service .ico{background:#f1f1f1!important;colo
   body.customer-auth #home .stats-row{gap:8px!important}
   body.customer-auth #home .stat-card{padding:12px 10px!important}
 }
+
+/* =========================================================
+   UNIQUE TECHNO — UBER-INSPIRED HOME V3
+   Black / white / neutral only. Home page design only.
+   ========================================================= */
+body.customer-auth #home{
+  background:#f5f5f5!important;
+  color:#111!important;
+}
+body.customer-auth #home .nav{
+  background:#fff!important;
+  border-bottom:1px solid #e8e8e8!important;
+  box-shadow:0 1px 0 rgba(0,0,0,.03)!important;
+}
+body.customer-auth #home .navin{
+  height:68px!important;
+}
+body.customer-auth #home .nav .brand{color:#111!important;font-size:17px!important;font-weight:800!important}
+body.customer-auth #home .nav .mark{background:#111!important;color:#fff!important}
+body.customer-auth #home .wrap{
+  background:#f5f5f5!important;
+}
+
+/* Large Uber-style black hero */
+body.customer-auth #home .dashboard-hero{
+  background:#000!important;
+  border-radius:0!important;
+  min-height:410px!important;
+  padding:58px 52px!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1.15fr) minmax(300px,.85fr)!important;
+  align-items:center!important;
+  gap:38px!important;
+  box-shadow:none!important;
+}
+body.customer-auth #home .dashboard-hero:after{
+  right:-130px!important;top:-180px!important;
+  width:520px!important;height:520px!important;
+  border:90px solid #151515!important;
+  opacity:1!important;
+}
+body.customer-auth #home .dashboard-hero:before{
+  content:"";position:absolute;right:95px;bottom:-210px;width:360px;height:360px;
+  border:1px solid #333;border-radius:50%;z-index:0;
+}
+body.customer-auth #home .dashboard-hero-copy{max-width:650px!important;z-index:3!important}
+body.customer-auth #home .hero-badge{
+  display:inline-flex!important;width:max-content!important;
+  background:#fff!important;color:#111!important;border:0!important;
+  border-radius:999px!important;padding:8px 12px!important;
+  font-size:10px!important;font-weight:800!important;letter-spacing:.8px!important;
+}
+body.customer-auth #home .hero-badge span{background:#111!important}
+body.customer-auth #home .dashboard-hero .eyebrow{color:#999!important;margin-top:26px!important}
+body.customer-auth #home .dashboard-hero h1{
+  color:#fff!important;font-size:clamp(42px,5vw,68px)!important;
+  line-height:.98!important;letter-spacing:-3.5px!important;
+  max-width:650px!important;margin:8px 0 16px!important;
+}
+body.customer-auth #home .dashboard-hero p{
+  color:#b5b5b5!important;max-width:560px!important;
+  font-size:16px!important;line-height:1.6!important;
+}
+body.customer-auth #home .hero-primary{
+  background:#fff!important;color:#111!important;border-radius:4px!important;
+  padding:14px 20px!important;font-weight:800!important;
+}
+body.customer-auth #home .hero-primary:hover{background:#e8e8e8!important}
+body.customer-auth #home .hero-link{color:#fff!important;font-weight:700!important}
+body.customer-auth #home .hero-trust{color:#999!important}
+
+/* Offer card becomes a clean white floating booking card */
+body.customer-auth #home .offers-top{
+  background:#fff!important;color:#111!important;
+  border-radius:4px!important;border:0!important;
+  box-shadow:0 18px 45px rgba(0,0,0,.28)!important;
+  min-height:210px!important;padding:24px!important;
+  z-index:4!important;
+}
+body.customer-auth #home .offers-top *{color:inherit}
+
+/* Stats: neutral Uber-like tiles */
+body.customer-auth #home .stats-row{
+  grid-template-columns:repeat(4,1fr)!important;
+  gap:1px!important;background:#ddd!important;
+  border:1px solid #ddd!important;margin:0!important;
+}
+body.customer-auth #home .stat-card{
+  background:#fff!important;border:0!important;border-radius:0!important;
+  min-height:104px!important;padding:20px!important;box-shadow:none!important;
+}
+body.customer-auth #home .stat-card .stat-icon{
+  background:#f1f1f1!important;color:#111!important;border-radius:50%!important;
+}
+body.customer-auth #home .stat-card small{color:#666!important}
+body.customer-auth #home .stat-card b{color:#111!important;font-size:22px!important}
+
+/* Home content */
+body.customer-auth #home .dashboard-grid{gap:14px!important;margin-top:14px!important}
+body.customer-auth #home .dash-panel,
+body.customer-auth #home .support-banner,
+body.customer-auth #home .trust-strip{
+  background:#fff!important;border:1px solid #e1e1e1!important;
+  border-radius:0!important;box-shadow:none!important;
+}
+body.customer-auth #home .dash-panel{padding:22px!important}
+body.customer-auth #home .support-banner button{
+  background:#111!important;color:#fff!important;border-radius:4px!important;
+}
+body.customer-auth #home .support-orb{background:#111!important;color:#fff!important}
+body.customer-auth #home .trust-strip{margin-top:14px!important}
+body.customer-auth #home .trust-strip>div{border-right:1px solid #eee!important}
+body.customer-auth #home .trust-strip>div:last-child{border-right:0!important}
+body.customer-auth #home .trust-strip b{color:#111!important}
+body.customer-auth #home .trust-strip small{color:#777!important}
+
+/* Mobile: app-like Uber layout */
+@media(max-width:760px){
+  body.customer-auth #home .navin{height:58px!important}
+  body.customer-auth #home .wrap{padding:0 0 86px!important}
+  body.customer-auth #home .dashboard-hero{
+    min-height:560px!important;padding:28px 20px!important;
+    display:flex!important;flex-direction:column!important;
+    align-items:stretch!important;justify-content:flex-start!important;
+    gap:22px!important;border-radius:0!important;
+  }
+  body.customer-auth #home .dashboard-hero h1{
+    font-size:42px!important;letter-spacing:-2.5px!important;
+  }
+  body.customer-auth #home .dashboard-hero p{font-size:14px!important}
+  body.customer-auth #home .hero-trust{gap:8px!important;flex-wrap:wrap!important}
+  body.customer-auth #home .offers-top{margin-top:auto!important;min-height:180px!important}
+  body.customer-auth #home .stats-row{grid-template-columns:1fr 1fr!important}
+  body.customer-auth #home .stat-card{min-height:88px!important;padding:14px!important}
+  body.customer-auth #home .dashboard-grid{padding:0 14px!important}
+  body.customer-auth #home .trust-strip{margin:0 14px 14px!important;grid-template-columns:1fr 1fr!important}
+  body.customer-auth #home .trust-strip>div{border-bottom:1px solid #eee!important}
+}
+@media(max-width:430px){
+  body.customer-auth #home .dashboard-hero{min-height:535px!important}
+  body.customer-auth #home .dashboard-hero h1{font-size:38px!important}
+}
