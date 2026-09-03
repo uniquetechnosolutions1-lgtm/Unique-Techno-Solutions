@@ -1585,23 +1585,7 @@ body.booking-modal-open{overflow:hidden}
 .floating-notification-head h3{margin:2px 0 0;font-size:17px;color:#12243e}
 .floating-notification-read{border:0;background:transparent;color:#1769e8;font-size:9px;font-weight:900;cursor:pointer;white-space:nowrap}
 .floating-notification-list{max-height:440px;overflow:auto}
-
-.floating-notification-card{border-bottom:1px solid #eef2f5;background:#fff}
-.floating-notification-card.unread{background:#f4f9ff}
-.floating-notification-card.expanded{background:#fff}
-.floating-notification-item{width:100%;display:flex;gap:10px;padding:13px 15px;text-align:left;border:0;border-bottom:0;background:transparent;cursor:pointer;align-items:flex-start}
-.floating-notification-item:hover{background:#f7fbff}
-.floating-notification-chevron{margin-left:auto;color:#718096;font-size:13px;font-weight:900;padding-left:5px}
-.floating-notification-details{padding:0 15px 14px 33px;background:#fff}
-.floating-notification-detail-text{font-size:10px;line-height:1.55;color:#35465b;margin-bottom:10px}
-.floating-notification-detail-meta{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid #eef2f5;font-size:8px;color:#8a97a5}
-.floating-notification-detail-meta b{font-size:8px;color:#405168;text-align:right}
-.floating-notification-detail-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
-.floating-notification-mark-read,.floating-notification-open-booking{border:0;border-radius:8px;padding:7px 10px;font-size:8px;font-weight:900;cursor:pointer}
-.floating-notification-mark-read{background:#1769e8;color:#fff}
-.floating-notification-open-booking{background:#eef4fb;color:#1769e8}
-.floating-notification-read-state{font-size:8px;color:#5d6b7a;font-weight:800;padding:7px 0}
-
+.floating-notification-item{width:100%;display:flex;gap:10px;padding:13px 15px;text-align:left;border:0;border-bottom:1px solid #eef2f5;background:#fff;cursor:pointer}
 .floating-notification-item:hover{background:#f7fbff}
 .floating-notification-item.unread{background:#f4f9ff}
 .floating-notification-dot{width:8px;height:8px;border-radius:50%;background:#b8c3ce;margin-top:5px;flex:0 0 8px}

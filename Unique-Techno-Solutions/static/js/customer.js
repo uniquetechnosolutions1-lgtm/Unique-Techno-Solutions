@@ -612,77 +612,33 @@ function renderFloatingNotifications(){
     box.innerHTML='<div class="floating-notification-empty">No notifications yet.</div>';
     return;
   }
-  const openId=box.dataset.openId||'';
   box.innerHTML=notifications.slice(0,50).map(n=>{
-    const id=Number(n.id);
-    const isRead=Number(n.is_read)===1;
-    const expanded=String(id)===String(openId);
+    const unreadClass=Number(n.is_read)?'':' unread';
     const bid=n.booking_id?String(n.booking_id):'';
-    return `<div class="floating-notification-card${isRead?' read':' unread'}${expanded?' expanded':''}" data-notification-id="${id}">
-      <button type="button" class="floating-notification-item" onclick="toggleCustomerNotification(${id},event)" aria-expanded="${expanded?'true':'false'}">
+    const safeId=Number(n.id);
+    const isOpen=window.__openNotificationId===safeId;
+    return `<div class="floating-notification-item${unreadClass}${isOpen?' expanded':''}" data-notification-id="${safeId}">
+      <button type="button" class="floating-notification-main" onclick="toggleCustomerNotification(${safeId})">
         <span class="floating-notification-dot"></span>
         <span class="floating-notification-copy"><b>${esc(n.title)}</b><span>${esc(n.message)}</span><small>${esc(n.created_at||'')}</small></span>
-        <span class="floating-notification-chevron">${expanded?'⌃':'⌄'}</span>
+        <span class="floating-notification-chevron">${isOpen?'⌃':'⌄'}</span>
       </button>
-      <div class="floating-notification-details" ${expanded?'':'hidden'}>
-        <div class="floating-notification-detail-text">${esc(n.message)}</div>
-        <div class="floating-notification-detail-meta"><span>Received</span><b>${esc(n.created_at||'—')}</b></div>
-        <div class="floating-notification-detail-meta"><span>Status</span><b class="floating-notification-state">${isRead?'✓ Read':'● Unread'}</b></div>
-        <div class="floating-notification-detail-actions">
-          ${isRead?'<span class="floating-notification-read-state">✓ Already read</span>':`<button type="button" class="floating-notification-mark-read" onclick="markFloatingNotificationRead(${id},event)">✓ Mark as read</button>`}
-          ${bid?`<button type="button" class="floating-notification-open-booking" onclick="openFloatingNotificationBooking(${id},${JSON.stringify(bid)},event)">View booking</button>`:''}
+      ${isOpen?`<div class="floating-notification-details">
+        <div class="floating-notification-full">${esc(n.message||'No additional details available.')}</div>
+        <div class="floating-notification-meta"><span>${Number(n.is_read)?'✓ Read':'● Unread'}</span><span>${esc(n.created_at||'')}</span></div>
+        <div class="floating-notification-actions">
+          ${!Number(n.is_read)?`<button type="button" class="floating-notification-markread" onclick="markCustomerNotificationRead(${safeId},event)">✓ Mark as read</button>`:''}
+          ${bid?`<button type="button" class="floating-notification-view" onclick="viewCustomerNotificationBooking(${safeId},${JSON.stringify(bid)},event)">View Booking →</button>`:''}
         </div>
-      </div>
+      </div>`:''}
     </div>`;
   }).join('');
-}
-
-async function toggleCustomerNotification(id,event){
-  event?.stopPropagation();
-  const box=document.getElementById('floatingNotificationList');
-  if(!box)return;
-  const current=String(box.dataset.openId||'');
-  if(current===String(id)){
-    box.dataset.openId='';
-    renderFloatingNotifications();
-    return;
-  }
-  box.dataset.openId=String(id);
-  renderFloatingNotifications();
-}
-
-async function markFloatingNotificationRead(id,event){
-  event?.stopPropagation();
-  if(!customer?.id)return;
-  try{
-    await api('/api/customer/'+customer.id+'/notifications/read',{method:'POST',body:JSON.stringify({id:Number(id)})});
-    const n=notifications.find(x=>Number(x.id)===Number(id));
-    if(n)n.is_read=1;
-    const box=document.getElementById('floatingNotificationList');
-    if(box)box.dataset.openId=String(id);
-    renderFloatingNotifications();
-    updateNotificationBadges();
-    if(typeof renderDashboard==='function')renderDashboard();
-  }catch(e){alert(e?.message||'Could not mark notification as read.');}
-}
-
-async function openFloatingNotificationBooking(id,bookingId,event){
-  event?.stopPropagation();
-  await markFloatingNotificationRead(id,event);
-  const row=historyRows.find(x=>String(x.id)===String(bookingId));
-  if(row){
-    bookingCode=row.booking_code;
-    closeFloatingNotifications();
-    show('track');
-    refreshTracking();
-  }
 }
 
 function toggleFloatingNotifications(event){
   event?.stopPropagation();
   const p=document.getElementById('floatingNotificationPanel');
   if(!p || !customer?.id)return;
-  /* Never allow the notification panel and account menu to overlap. */
   if(typeof closeAccountMenu==='function') closeAccountMenu();
   const open=p.classList.toggle('open');
   p.setAttribute('aria-hidden',open?'false':'true');
@@ -691,24 +647,64 @@ function toggleFloatingNotifications(event){
 function closeFloatingNotifications(){
   const p=document.getElementById('floatingNotificationPanel');
   if(p){p.classList.remove('open');p.setAttribute('aria-hidden','true');}
+  window.__openNotificationId=null;
 }
-async function markCustomerNotificationRead(id){
-  try{await api('/api/customer/'+customer.id+'/notifications/read',{method:'POST',body:JSON.stringify({id:Number(id)})});}catch(e){}
+
+async function markCustomerNotificationRead(id,event){
+  event?.stopPropagation();
+  if(!customer?.id)return false;
+  try{
+    await api('/api/customer/'+customer.id+'/notifications/read',{method:'POST',body:JSON.stringify({id:Number(id)})});
+    const n=notifications.find(x=>Number(x.id)===Number(id));
+    if(n)n.is_read=1;
+    renderFloatingNotifications();
+    return true;
+  }catch(e){
+    alert('Could not mark notification as read. Please try again.');
+    return false;
+  }
 }
-async function markAllNotificationsRead(){
+
+async function markAllNotificationsRead(event){
+  event?.stopPropagation();
   if(!customer?.id)return;
   try{
     await api('/api/customer/'+customer.id+'/notifications/read',{method:'POST',body:JSON.stringify({all:true})});
-    await _loadNotificationsOriginal();
+    notifications.forEach(n=>n.is_read=1);
+    window.__openNotificationId=null;
     renderFloatingNotifications();
-  }catch(e){}
+    toast('All notifications marked as read.');
+  }catch(e){
+    alert('Could not mark all notifications as read. Please try again.');
+  }
 }
-async function openCustomerNotification(id,bookingId){
-  const box=document.getElementById('floatingNotificationList');
-  if(box)box.dataset.openId=String(id);
+
+async function toggleCustomerNotification(id){
+  const nid=Number(id);
+  if(window.__openNotificationId===nid){
+    window.__openNotificationId=null;
+    renderFloatingNotifications();
+    return;
+  }
+  window.__openNotificationId=nid;
   renderFloatingNotifications();
 }
 
+async function viewCustomerNotificationBooking(id,bookingId,event){
+  event?.stopPropagation();
+  await markCustomerNotificationRead(id,event);
+  window.__openNotificationId=null;
+  closeFloatingNotifications();
+  if(bookingId){
+    const row=historyRows.find(x=>String(x.id)===String(bookingId));
+    if(row){bookingCode=row.booking_code;show('track');refreshTracking();return;}
+  }
+}
+
+async function openCustomerNotification(id,bookingId){
+  // Kept for compatibility with any older markup/functions.
+  await toggleCustomerNotification(id);
+}
 
 (function initFloatingNotifications(){
   document.addEventListener('click',e=>{

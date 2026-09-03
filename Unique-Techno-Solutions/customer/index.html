@@ -299,7 +299,22 @@ body.customer-auth #home.screen.on ~ #accountFab{display:block!important}
   .account-fab{right:12px!important;top:10px!important}
 }
 </style>
-</head><body>
+<style id="notification-expand-markread-fix">
+.floating-notification-item{display:block!important;padding:0!important;background:#fff!important}
+.floating-notification-item.unread{background:#f4f9ff!important}
+.floating-notification-main{width:100%;display:flex;align-items:flex-start;gap:10px;padding:13px 15px;text-align:left;border:0;border-bottom:1px solid #eef2f5;background:transparent;cursor:pointer;font:inherit}
+.floating-notification-main:hover{background:#f7fbff}
+.floating-notification-chevron{margin-left:auto;color:#7c8b9b;font-size:14px;line-height:1}
+.floating-notification-item.expanded{background:#fff!important}
+.floating-notification-item.expanded .floating-notification-main{background:#f7fbff}
+.floating-notification-details{padding:0 15px 14px 33px;border-bottom:1px solid #e9eef3;background:#fff}
+.floating-notification-full{font-size:10px;line-height:1.55;color:#34475b;padding:8px 0 10px;white-space:pre-wrap;word-break:break-word}
+.floating-notification-meta{display:flex;justify-content:space-between;gap:10px;font-size:8px;color:#8a97a5;margin-bottom:10px}
+.floating-notification-actions{display:flex;gap:7px;flex-wrap:wrap}
+.floating-notification-actions button{border:0;border-radius:8px;padding:7px 10px;font-size:9px;font-weight:800;cursor:pointer}
+.floating-notification-markread{background:#1769e8;color:#fff}
+.floating-notification-view{background:#eef4fa;color:#17304a}
+</style></head><body>
 <section id="login" class="screen on">
   <div class="login auth-login-layout">
     <div class="login-left auth-panel-left">
@@ -540,7 +555,7 @@ body.customer-auth #home.screen.on ~ #accountFab{display:block!important}
   </div>
 </div>
 <div id="toast" style="position:fixed;right:15px;bottom:15px;background:#11151d;color:#fff;padding:11px 13px;border-radius:9px;font-size:10px;display:none"></div>
-<script src="/static/js/customer.js?v=floating-notification-20260903"></script><div id="bookingSuccessModal" class="booking-success-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="bookingSuccessTitle">
+<script src="/static/js/customer.js?v=notif-expand-markread-20260903"></script><div id="bookingSuccessModal" class="booking-success-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="bookingSuccessTitle">
   <div class="booking-success-backdrop" onclick="closeBookingSuccess()"></div>
   <div class="booking-success-card">
     <button class="booking-success-close" type="button" aria-label="Close" onclick="closeBookingSuccess()">×</button>
@@ -997,7 +1012,7 @@ if(!window._utTrackLoadHistory){
   <div id="floatingNotificationPanel" class="floating-notification-panel" aria-hidden="true">
     <div class="floating-notification-head">
       <div><span class="eyebrow">UPDATES</span><h3>Notifications</h3></div>
-      <button type="button" class="floating-notification-read" onclick="markAllNotificationsRead()">Mark all read</button>
+      <button type="button" class="floating-notification-read" onclick="markAllNotificationsRead(event)">Mark all read</button>
     </div>
     <div id="floatingNotificationList" class="floating-notification-list"></div>
   </div>
