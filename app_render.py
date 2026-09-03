@@ -463,6 +463,26 @@ class Handler(BaseHTTPRequestHandler):
                 cur=c.execute('INSERT INTO customers(name,phone,area,email,address,created_at) VALUES(?,?,?,?,?,?)',(name,phone,'',email,address,now()))
                 cid=cur.lastrowid;c.commit()
                 return send_json(self,201,{'customer':dict(c.execute('SELECT * FROM customers WHERE id=?',(cid,)).fetchone())}, set_cookie=customer_cookie(cid))
+            if p.startswith('/api/customer/') and p.endswith('/profile-change-otp'):
+                session_cid=require_customer(self)
+                if not session_cid: return
+                try: cid=int(p.split('/')[3])
+                except Exception: return send_json(self,400,{'error':'Invalid customer id'})
+                if cid != session_cid: return send_json(self,403,{'error':'Customer access denied'})
+                r=c.execute('SELECT * FROM customers WHERE id=?',(cid,)).fetchone()
+                if not r:return send_json(self,404,{'error':'Customer not found'})
+                typ=str(d.get('type','')).strip().lower(); value=str(d.get('value','')).strip()
+                if typ not in ('email','mobile'): return send_json(self,400,{'error':'Invalid change type'})
+                if typ=='email':
+                    if not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$',value): return send_json(self,400,{'error':'Enter a valid email address.'})
+                    other=c.execute('SELECT id FROM customers WHERE lower(email)=lower(?) AND id<>?',(value,cid)).fetchone()
+                    if other:return send_json(self,409,{'error':'This email is already registered with another account.'})
+                else:
+                    value=re.sub(r'\D','',value)[-10:]
+                    if len(value)!=10:return send_json(self,400,{'error':'Enter a valid 10-digit mobile number.'})
+                    other=c.execute('SELECT id FROM customers WHERE phone=? AND id<>?',(value,cid)).fetchone()
+                    if other:return send_json(self,409,{'error':'This mobile number is already registered with another account.'})
+                return send_json(self,200,{'sent':True,'message':'OTP sent to your registered mobile number.','otp_demo':'123456'})
             if p=='/api/customer/logout':
                 clear_customer_cookie(self)
                 return send_json(self,200,{'ok':True}, set_cookie='uts_customer_session=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax')
@@ -700,8 +720,6 @@ class Handler(BaseHTTPRequestHandler):
                     if len(value)!=10:return send_json(self,400,{'error':'Enter a valid 10-digit mobile number.'})
                     other=c.execute('SELECT id FROM customers WHERE phone=? AND id<>?',(value,cid)).fetchone()
                     if other:return send_json(self,409,{'error':'This mobile number is already registered with another account.'})
-                if self.command=='POST':
-                    return send_json(self,200,{'sent':True,'message':'OTP sent to your registered mobile number.','otp_demo':'123456'})
                 otp=str(d.get('otp','')).strip()
                 if otp!='123456': return send_json(self,401,{'error':'Invalid OTP'})
                 if typ=='email': c.execute('UPDATE customers SET email=? WHERE id=?',(value.lower(),cid))
