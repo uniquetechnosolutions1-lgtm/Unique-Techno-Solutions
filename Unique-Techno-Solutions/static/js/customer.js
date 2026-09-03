@@ -604,31 +604,27 @@ loadNotifications = async function(){
 function renderFloatingNotifications(){
   const box=document.getElementById('floatingNotificationList');
   const badge=document.getElementById('floatingNotifCount');
-  if(!box || !badge) return;
-  const unread=notifications.filter(n=>!Number(n.is_read)).length;
+  if(!box||!badge)return;
+  const unread=notifications.filter(n=>Number(n.is_read)!==1).length;
   badge.textContent=unread?String(unread):'';
   badge.classList.toggle('has-count',unread>0);
-  if(!notifications.length){
-    box.innerHTML='<div class="floating-notification-empty">No notifications yet.</div>';
-    return;
-  }
+  if(!notifications.length){box.innerHTML='<div class="floating-notification-empty">No notifications yet.</div>';return;}
   box.innerHTML=notifications.slice(0,50).map(n=>{
-    const unreadClass=Number(n.is_read)?'':' unread';
-    const bid=n.booking_id?String(n.booking_id):'';
-    const safeId=Number(n.id);
-    const isOpen=window.__openNotificationId===safeId;
-    return `<div class="floating-notification-item${unreadClass}${isOpen?' expanded':''}" data-notification-id="${safeId}">
-      <button type="button" class="floating-notification-main" onclick="toggleCustomerNotification(${safeId})">
+    const id=Number(n.id);
+    const open=Number(window.__openNotificationId)===id;
+    const unreadClass=Number(n.is_read)!==1?' unread':'';
+    return `<div class="floating-notification-item${unreadClass}${open?' expanded':''}" data-id="${id}">
+      <div class="floating-notification-row" role="button" tabindex="0" onclick="toggleCustomerNotification(${id},event)" onkeydown="if(event.key==='Enter'||event.key===' ')toggleCustomerNotification(${id},event)">
         <span class="floating-notification-dot"></span>
         <span class="floating-notification-copy"><b>${esc(n.title)}</b><span>${esc(n.message)}</span><small>${esc(n.created_at||'')}</small></span>
-        <span class="floating-notification-chevron">${isOpen?'⌃':'⌄'}</span>
-      </button>
-      ${isOpen?`<div class="floating-notification-details">
+        <span class="floating-notification-chevron">${open?'⌃':'⌄'}</span>
+      </div>
+      ${open?`<div class="floating-notification-details">
         <div class="floating-notification-full">${esc(n.message||'No additional details available.')}</div>
-        <div class="floating-notification-meta"><span>${Number(n.is_read)?'✓ Read':'● Unread'}</span><span>${esc(n.created_at||'')}</span></div>
+        <div class="floating-notification-meta"><span class="${Number(n.is_read)!==1?'status-unread':'status-read'}">${Number(n.is_read)!==1?'● Unread':'✓ Read'}</span><span>${esc(n.created_at||'')}</span></div>
         <div class="floating-notification-actions">
-          ${!Number(n.is_read)?`<button type="button" class="floating-notification-markread" onclick="markCustomerNotificationRead(${safeId},event)">✓ Mark as read</button>`:''}
-          ${bid?`<button type="button" class="floating-notification-view" onclick="viewCustomerNotificationBooking(${safeId},${JSON.stringify(bid)},event)">View Booking →</button>`:''}
+          ${Number(n.is_read)!==1?`<button type="button" class="floating-notification-markread" onclick="markCustomerNotificationRead(${id},event)">✓ Mark as read</button>`:'<span class="floating-notification-read-label">✓ Already read</span>'}
+          ${n.booking_id?`<button type="button" class="floating-notification-view" onclick="viewCustomerNotificationBooking(${id},${JSON.stringify(String(n.booking_id))},event)">View Booking →</button>`:''}
         </div>
       </div>`:''}
     </div>`;
@@ -637,12 +633,13 @@ function renderFloatingNotifications(){
 
 function toggleFloatingNotifications(event){
   event?.stopPropagation();
+  if(!customer?.id)return;
   const p=document.getElementById('floatingNotificationPanel');
-  if(!p || !customer?.id)return;
-  if(typeof closeAccountMenu==='function') closeAccountMenu();
+  if(!p)return;
+  if(typeof closeAccountMenu==='function')closeAccountMenu();
   const open=p.classList.toggle('open');
   p.setAttribute('aria-hidden',open?'false':'true');
-  if(open)loadNotifications();
+  if(open){window.__openNotificationId=null;loadNotifications();}
 }
 function closeFloatingNotifications(){
   const p=document.getElementById('floatingNotificationPanel');
@@ -654,7 +651,8 @@ async function markCustomerNotificationRead(id,event){
   event?.stopPropagation();
   if(!customer?.id)return false;
   try{
-    await api('/api/customer/'+customer.id+'/notifications/read',{method:'POST',body:JSON.stringify({id:Number(id)})});
+    const r=await api('/api/customer/'+customer.id+'/notifications/read',{method:'POST',body:JSON.stringify({id:Number(id)})});
+    if(!r?.ok)throw Error('Read update failed');
     const n=notifications.find(x=>Number(x.id)===Number(id));
     if(n)n.is_read=1;
     renderFloatingNotifications();
@@ -669,52 +667,39 @@ async function markAllNotificationsRead(event){
   event?.stopPropagation();
   if(!customer?.id)return;
   try{
-    await api('/api/customer/'+customer.id+'/notifications/read',{method:'POST',body:JSON.stringify({all:true})});
+    const r=await api('/api/customer/'+customer.id+'/notifications/read',{method:'POST',body:JSON.stringify({all:true})});
+    if(!r?.ok)throw Error('Read update failed');
     notifications.forEach(n=>n.is_read=1);
     window.__openNotificationId=null;
     renderFloatingNotifications();
     toast('All notifications marked as read.');
-  }catch(e){
-    alert('Could not mark all notifications as read. Please try again.');
-  }
+  }catch(e){alert('Could not mark all notifications as read. Please try again.');}
 }
 
-async function toggleCustomerNotification(id){
+function toggleCustomerNotification(id,event){
+  event?.stopPropagation();
   const nid=Number(id);
-  if(window.__openNotificationId===nid){
-    window.__openNotificationId=null;
-    renderFloatingNotifications();
-    return;
-  }
-  window.__openNotificationId=nid;
+  window.__openNotificationId=Number(window.__openNotificationId)===nid?null:nid;
   renderFloatingNotifications();
 }
 
 async function viewCustomerNotificationBooking(id,bookingId,event){
   event?.stopPropagation();
   await markCustomerNotificationRead(id,event);
-  window.__openNotificationId=null;
   closeFloatingNotifications();
-  if(bookingId){
-    const row=historyRows.find(x=>String(x.id)===String(bookingId));
-    if(row){bookingCode=row.booking_code;show('track');refreshTracking();return;}
-  }
+  const row=historyRows.find(x=>String(x.id)===String(bookingId));
+  if(row){bookingCode=row.booking_code;show('track');await refreshTracking();}
 }
 
-async function openCustomerNotification(id,bookingId){
-  // Kept for compatibility with any older markup/functions.
-  await toggleCustomerNotification(id);
-}
+async function openCustomerNotification(id,bookingId){toggleCustomerNotification(id);}
 
 (function initFloatingNotifications(){
   document.addEventListener('click',e=>{
     const root=document.getElementById('notificationFab');
-    if(root && !root.contains(e.target))closeFloatingNotifications();
+    if(root&&!root.contains(e.target))closeFloatingNotifications();
   });
   document.addEventListener('keydown',e=>{if(e.key==='Escape')closeFloatingNotifications()});
-  setInterval(()=>{
-    if(customer && document.visibilityState==='visible')loadNotifications().catch(()=>{});
-  },10000);
+  setInterval(()=>{if(customer&&document.visibilityState==='visible')loadNotifications().catch(()=>{});},10000);
 })();
 
 async function logoutCustomer(){try{await api('/api/customer/logout',{method:'POST'});}catch(e){} customer=null;historyRows=[];notifications=[];document.body.classList.remove('customer-auth');document.getElementById('otpStep').classList.remove('on');document.getElementById('phoneStep').style.display='block';document.getElementById('otp').value='';show('login');window.history.replaceState({},'', '/customer/login');}
