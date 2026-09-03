@@ -98,12 +98,16 @@ async function verifyAuthOtp(){
 async function completeSignup(){
   const name=document.getElementById('signupName').value.trim();
   const email=document.getElementById('signupEmail').value.trim();
+  const area=document.getElementById('signupArea').value.trim();
+  const pincode=document.getElementById('signupPincode').value.trim();
   const address=document.getElementById('signupAddress').value.trim();
   if(name.length<2)return alert('Please enter your full name.');
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return alert('Please enter a valid email address.');
+  if(!area)return alert('Please enter your area.');
+  if(!/^\d{6}$/.test(pincode))return alert('Please enter a valid 6-digit pincode.');
   if(address.length<8)return alert('Please enter your complete service address.');
   try{
-    const d=await api('/api/customer/signup',{method:'POST',body:JSON.stringify({phone:document.getElementById('signupPhone').value,otp:document.getElementById('otp').value.trim(),name,email,address})});
+    const d=await api('/api/customer/signup',{method:'POST',body:JSON.stringify({phone:document.getElementById('signupPhone').value,otp:document.getElementById('otp').value.trim(),name,email,area,pincode,address})});
     customer=d.customer;
     document.body.classList.add('customer-auth');
     await Promise.all([loadServices(),loadOffers(),loadHistory(),loadProfile(),loadNotifications()]);
@@ -515,8 +519,72 @@ async function verifyProfileChangeOtp(){
 }
 
 async function saveProfile(){try{customer=await api('/api/customer/'+customer.id+'/profile',{method:'PUT',body:JSON.stringify({name:document.getElementById('pName').value,email:document.getElementById('pEmail').value,area:document.getElementById('pArea').value,address:document.getElementById('pAddress').value})});renderProfile();toast('Profile updated.')}catch(e){alert(e.message)}}
-async function loadNotifications(){if(!customer?.id)return;try{notifications=await api('/api/customer/'+customer.id+'/notifications');renderNotifications();document.getElementById('notifCount').textContent=notifications.filter(n=>!n.is_read).length||''}catch(e){document.getElementById('notificationList').innerHTML='<div class="notification-empty">No notifications.</div>'}}
-function renderNotifications(){const box=document.getElementById('notificationList');if(!notifications.length){box.innerHTML='<div class="notification-empty">No notifications.</div>';return}box.innerHTML=notifications.map(n=>`<div class="notification ${n.is_read?'':'unread'}"><b>${esc(n.title)}</b><span>${esc(n.message)}</span><span>${esc(n.created_at)}</span></div>`).join('')}
+function updateProfileCompletion(){
+  const fields=[customer?.name,customer?.phone,customer?.email,customer?.area,customer?.pincode,customer?.address];
+  const done=fields.filter(x=>String(x||'').trim()).length;
+  const pct=Math.round(done/fields.length*100);
+  const a=document.getElementById('profileCompletionPct'); if(a)a.textContent=pct+'%';
+  const b=document.getElementById('profileCompletionLabel'); if(b)b.textContent=pct+'%';
+  const bar=document.getElementById('profileCompletionBar'); if(bar)bar.style.width=pct+'%';
+  const t=document.getElementById('profileCompletionText'); if(t)t.textContent=pct===100?'Profile complete':'Complete your profile';
+  const sec=document.getElementById('profileSecurity');
+  if(sec)sec.innerHTML='<div class="security-row"><span>✓</span><div><b>Mobile verified</b><small>'+esc(customer?.phone||'Not available')+'</small></div></div><div class="security-row"><span>✓</span><div><b>Email '+(customer?.email?'available':'pending')+'</b><small>'+(customer?.email||'Add an email for account recovery')+'</small></div></div>';
+}
+function renderProfile(){const n=(customer.name||'C').split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase();const av=document.getElementById('profileAvatar');if(av)av.textContent=n;document.getElementById('profileWelcome').textContent='Welcome, '+(customer.name||'Customer');document.getElementById('pName').value=customer.name||'';document.getElementById('pPhone').value=customer.phone||'';document.getElementById('pEmail').value=customer.email||'';const pa=document.getElementById('pArea');if(pa)pa.value=customer.area||'';const pp=document.getElementById('pPincode');if(pp)pp.value=customer.pincode||'';const pad=document.getElementById('pAddress');if(pad)pad.value=customer.address||'';const ba=document.getElementById('address');if(ba && customer.address)ba.value=customer.address;updateAccountControl();updateProfileCompletion();}
+async function saveAddress(){try{const area=(document.getElementById('pArea')?.value||'').trim();const pincode=(document.getElementById('pPincode')?.value||'').trim();const address=(document.getElementById('pAddress')?.value||'').trim();if(!area)throw Error('Area is required.');if(!/^\d{6}$/.test(pincode))throw Error('Enter a valid 6-digit pincode.');if(address.length<8)throw Error('Complete service address is required.');const updated=await api('/api/customer/'+customer.id+'/profile',{method:'PUT',body:JSON.stringify({name:customer.name,email:customer.email,area,pincode,address})});customer=updated;localStorage.setItem('customer',JSON.stringify(customer));updateProfileCompletion();toast('Address saved successfully.')}catch(e){alert(e.message)}}
+async function loadNotifications(){
+  if(!customer?.id)return;
+  ensureNotificationFab();
+  try{
+    notifications=await api('/api/customer/'+customer.id+'/notifications');
+    renderNotifications();
+    updateNotificationBadge();
+  }catch(e){
+    const a=document.getElementById('notificationList');if(a)a.innerHTML='<div class="notification-empty">No notifications.</div>';
+    const b=document.getElementById('notifPanelList');if(b)b.innerHTML='<div class="notif-empty">No notifications.</div>';
+  }
+}
+function updateNotificationBadge(){
+  const unread=notifications.filter(n=>!Number(n.is_read)).length;
+  ['notifCount','sideNotifCount','notifFabBadge'].forEach(id=>{
+    const e=document.getElementById(id);if(e){e.textContent=unread>99?'99+':(unread||'');if(id==='notifFabBadge')e.style.display=unread?'block':'none';}
+  });
+  const sub=document.getElementById('notifPanelSub');if(sub)sub.textContent=unread?unread+' unread update'+(unread===1?'':'s'):'All caught up';
+}
+function renderNotificationItems(targetId,cls){
+  const box=document.getElementById(targetId);if(!box)return;
+  if(!notifications.length){box.innerHTML='<div class="'+cls+'">You are all caught up. No notifications yet.</div>';return}
+  box.innerHTML=notifications.map(n=>`<div class="${cls} ${Number(n.is_read)?'':'unread'}" onclick="openNotificationItem(${Number(n.id||0)},'${esc(n.booking_id||'')}')"><b>${esc(n.title)}</b><span>${esc(n.message)}</span><time>${esc(n.created_at)}</time></div>`).join('');
+}
+function renderNotifications(){
+  renderNotificationItems('notificationList','notification');
+  renderNotificationItems('notifPanelList','notif-item');
+}
+async function markNotificationRead(id){
+  if(!id)return;
+  try{await api('/api/customer/'+customer.id+'/notifications/'+id+'/read',{method:'POST'});const n=notifications.find(x=>Number(x.id)===Number(id));if(n)n.is_read=1;renderNotifications();updateNotificationBadge();}catch(e){}
+}
+function openNotificationItem(id,bookingId){
+  markNotificationRead(id);closeNotificationPanel();
+  if(bookingId){bookingCode=bookingId;show('history','bookings');loadHistory();}
+}
+function toggleNotificationPanel(e){
+  if(e){e.preventDefault();e.stopPropagation();}
+  const p=document.getElementById('notifPanel');if(!p)return;
+  const open=p.classList.toggle('open');p.setAttribute('aria-hidden',open?'false':'true');
+  if(open)loadNotifications();
+}
+function ensureNotificationFab(){const f=document.getElementById('notifFab');if(f)f.style.display=customer?.id?'block':'none';updateNotificationBadge()}
+function closeNotificationPanel(){const p=document.getElementById('notifPanel');if(p){p.classList.remove('open');p.setAttribute('aria-hidden','true')}}
+async function markAllNotificationsRead(){
+  if(!customer?.id)return;
+  try{await api('/api/customer/'+customer.id+'/notifications/read-all',{method:'POST'});notifications.forEach(n=>n.is_read=1);renderNotifications();updateNotificationBadge();}catch(e){}
+}
+document.addEventListener('click',e=>{const f=document.getElementById('notifFab');if(f&&!f.contains(e.target))closeNotificationPanel()});
+setInterval(()=>{if(customer?.id)loadNotifications()},10000);
+setInterval(ensureNotificationFab,1000);
+window.addEventListener('focus',()=>{if(customer?.id)loadNotifications()});
+window.addEventListener('pageshow',()=>{if(customer?.id)loadNotifications()});
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',2200)}
 async function initCustomerAuth(){try{const d=await api('/api/customer/session');if(d.customer){customer=d.customer;document.body.classList.add('customer-auth');await Promise.all([loadServices(),loadOffers(),loadHistory(),loadProfile(),loadNotifications()]);show('home');return}}catch(e){} document.body.classList.remove('customer-auth');show('login')}
 initCustomerAuth();
@@ -607,92 +675,7 @@ async function offerActivity(offerId,activity){try{await api('/api/offers/'+enco
 function openOfferDetails(offerId,action='view'){const o=offers.find(x=>Number(x.id)===Number(offerId));if(!o)return;offerActivity(o.id,action==='explore'?'explore':'view');const svc=o.service_id?services.find(s=>Number(s.id)===Number(o.service_id)):null;document.getElementById('offerModalBadge').textContent=o.badge||'LIMITED OFFER';document.getElementById('offerModalIcon').textContent=o.icon||'✦';document.getElementById('offerModalTitle').textContent=o.title;document.getElementById('offerModalDesc').textContent=o.description;document.getElementById('offerModalDiscount').textContent=o.discount||'Special offer';document.getElementById('offerModalPrice').textContent='₹'+Number(o.fixed_price||0).toLocaleString('en-IN');document.getElementById('offerModalValid').textContent=o.valid_until?'Valid till '+o.valid_until:'While available';document.getElementById('offerModalService').textContent=svc?svc.name:(o.service_name||'Professional service');const btn=document.getElementById('offerModalBook');btn.style.display=svc?'inline-flex':'none';btn.textContent='Book This Offer →';btn.onclick=()=>{if(svc){pendingOfferId=o.id;currentService=svc;openBooking()}closeOfferDetails()};document.getElementById('offerDetailsModal').classList.add('open');document.body.classList.add('modal-open')}
 function closeOfferDetails(){document.getElementById('offerDetailsModal')?.classList.remove('open');document.body.classList.remove('modal-open')}
 function openOfferAction(offerId,action='explore'){openOfferDetails(offerId,action)}
-function renderDashboard(){
-  if(!customer)return;
-  const active=historyRows.filter(b=>!['Completed','Closed','Cancelled'].includes(b.status));
-  const completed=historyRows.filter(b=>['Completed','Closed'].includes(b.status));
-  const ratings=historyRows.filter(b=>Number(b.review_rating)>0).map(b=>Number(b.review_rating));
-  const avg=ratings.length?(ratings.reduce((a,b)=>a+b,0)/ratings.length).toFixed(1):'—';
-  const name=customer.name&&customer.name!=='Customer'?customer.name.split(/\s+/)[0]:'there';
-  const g=document.getElementById('dashGreeting'); if(g)g.textContent=`Welcome back, ${name}.`;
-  const sub=document.getElementById('dashSubtitle'); if(sub)sub.textContent=active.length?'Here is the latest update on your service.':'Professional technical support whenever you need it.';
-  document.getElementById('statTotal').textContent=historyRows.length;
-  document.getElementById('statCompleted').textContent=completed.length;
-  document.getElementById('statActive').textContent=active.length;
-  document.getElementById('statRating').textContent=avg+(avg!=='—'?' ★':'');
 
-  const current=document.getElementById('currentServicePanel');
-  if(active.length){
-    const b=active[0];
-    const ini=b.engineer?b.engineer.split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase():'—';
-    current.innerHTML=`<div class="panel-heading"><div><span class="eyebrow">CURRENT SERVICE</span><h3>Service in progress</h3></div><span class="current-status">${esc(b.status)}</span></div><div class="current-active"><div><div class="current-title">${esc(b.service)}</div><div class="current-meta"><b>${esc(b.booking_code)}</b> • ${esc(b.date)} • ${esc(b.time)}<br>${esc(b.address||'Service address not set')}</div>${b.engineer?`<div class="engineer-mini"><div class="mini-avatar">${ini}</div><div><b>${esc(b.engineer)}</b><span>Engineer • ${esc(b.engineer_status||'Assigned')}</span></div></div>`:''}<div class="current-actions"><button class="mini-btn primary" onclick="bookingCode='${esc(b.booking_code)}';show('track');refreshTracking()">View Service</button>${b.engineer_phone?`<a class="mini-btn" href="tel:${esc(b.engineer_phone)}">Call Engineer</a>`:''}</div></div><div class="dash-mini-art">${esc(b.service_icon||'🛠️')}</div></div>`;
-  }else{
-    current.innerHTML=`<div class="dash-empty"><div class="dash-empty-copy"><span class="eyebrow">NO ACTIVE SERVICE</span><h2>Nothing booked right now.</h2><p>You can browse our professional services, schedule a visit, or simply explore the portal. We will keep your service information here when you book.</p><button class="btn dark" onclick="show('servicesPage');renderServices()">Book a Service →</button></div><div class="dash-mini-art">⚙</div></div>`;
-  }
-
-  const upcoming=document.getElementById('upcomingPanel');
-  const future=historyRows.filter(b=>!['Completed','Closed','Cancelled'].includes(b.status)).slice(1,2);
-  if(future.length){const b=future[0];upcoming.innerHTML=`<div class="panel-heading"><div><span class="eyebrow">UPCOMING SERVICE</span><h3>Your next visit</h3></div><span class="upcoming-badge">${esc(b.status)}</span></div><div class="upcoming-grid"><div><div class="service-name">${esc(b.service)}</div><div class="service-meta">${esc(b.date)} • ${esc(b.time)}<br>${esc(b.engineer?'Engineer: '+b.engineer:'Engineer will be assigned soon')}<br>${esc(b.address||'')}</div></div><button type="button" class="date-box" onclick="openUpcomingBooking('${esc(b.booking_code)}')" aria-label="View details for ${esc(b.service)}"><b>→</b><span>View details</span></button></div>`}else{upcoming.innerHTML='';}
-
-  const last=completed[0]; const lastPanel=document.getElementById('lastServicePanel');
-  if(last){lastPanel.innerHTML=`<div class="panel-heading"><div><span class="eyebrow">LAST SERVICE</span><h3>Recently completed</h3></div><button class="text-link" onclick="bookingCode='${esc(last.booking_code)}';show('track');refreshTracking()">View Details →</button></div><div class="last-grid"><div><div class="service-name">${esc(last.service)}</div><div class="service-meta">${esc(last.date)} • ${esc(last.time)}<br>Engineer: ${esc(last.engineer||'—')}<br>Amount: ₹${Number(last.amount||0).toLocaleString('en-IN')}</div></div><div class="date-box"><b>${last.review_rating?'★ '+last.review_rating:'☆'}</b><span>${last.review_rating?'Your rating':'Rate service'}</span></div></div>`}else{lastPanel.innerHTML='';}
-
-  const op=document.getElementById('offersPanel');
-  if(op){
-    if(offers.length){
-      op.innerHTML=`<div class="offers-shell">
-        <div class="offers-topline"><div><span class="eyebrow">LATEST OFFERS</span><h3>Exclusive offers for you.</h3><p>Smart savings on professional services from Unique Techno Solutions.</p></div><span class="offer-live"><i></i> LIVE OFFERS</span></div>
-        <div class="offer-benefits">
-          <div><span class="benefit-icon">✓</span><div><b>Trusted Service</b><small>Professional support</small></div></div>
-          <div><span class="benefit-icon">◷</span><div><b>Limited Time</b><small>Grab before it ends</small></div></div>
-          <div><span class="benefit-icon">✦</span><div><b>Expert Engineers</b><small>Skilled professionals</small></div></div>
-          <div><span class="benefit-icon">⌁</span><div><b>Better Value</b><small>Service + savings</small></div></div>
-        </div>
-        <div class="offer-grid unique-offer-grid">${offers.slice(0,3).map((o,i)=>`<article class="offer-card unique-offer-card offer-tone-${i%3}">
-          <div class="offer-card-top"><span class="offer-badge">${esc(o.badge||'LIMITED TIME')}</span><span class="offer-icon">${esc(o.icon||'✦')}</span></div>
-          <h4>${esc(o.title)}</h4><p>${esc(o.description)}</p>
-          <div class="offer-save">${esc(o.discount||'Special offer')}</div>
-          <div class="offer-meta"><div><small>FIXED OFFER PRICE</small><b>₹${Number(o.fixed_price||0).toLocaleString('en-IN')}</b></div><div><small>VALID TILL</small><b>${esc(o.valid_until||'While available')}</b></div></div>
-          <div class="offer-cta"><button onclick="${o.service_id?`pendingOfferId=${Number(o.id)};currentService=services.find(s=>Number(s.id)===Number(${Number(o.service_id)}));openBooking()`:`openOfferDetails(${Number(o.id)},'explore')` }">${o.service_id?'Book Now →':'Explore Offer →'}</button><button class="offer-details-link" onclick="openOfferDetails(${Number(o.id)},'view')">View details</button></div>
-        </article>`).join('')}</div>
-        <div class="offers-footer"><div><span class="gift-mark">✦</span><div><b>More offers coming your way!</b><small>Keep notifications enabled so you never miss a deal.</small></div></div><button onclick="show('notifications');loadNotifications()">Enable Alerts →</button></div>
-      </div>`;
-    } else { op.innerHTML='<div class="offers-empty"><div class="offers-empty-icon">✦</div><div><span class="eyebrow">EXCLUSIVE FOR YOU</span><h3>No active offers right now.</h3><p>We are preparing new service deals. Check back soon or explore our services below.</p></div><button class="btn dark" onclick="show(&quot;servicesPage&quot;);renderServices()">Explore Services →</button></div>'; }
-  }
-
-  const rec=document.getElementById('recommendationsPanel');
-  const source=services.slice(0,3);
-  rec.innerHTML=`<div class="panel-heading"><div><span class="eyebrow">EXPLORE</span><h3>Popular services</h3></div><button class="text-link" onclick="show('servicesPage');renderServices()">View all →</button></div><div class="rec-grid">${source.map(s=>`<div class="rec-card" onclick="openDetails(${s.id})"><div class="rec-icon">${esc(s.icon)}</div><b>${esc(s.name)}</b><span>From ₹${Number(s.price).toLocaleString('en-IN')}</span></div>`).join('')}</div>`;
-
-  const dn=document.getElementById('dashNotifications'); const recent=notifications.slice(0,4);
-  if(dn){
-    dn.innerHTML=recent.length?`<div class="notification-list-mini">${recent.map(n=>`<div class="notif-mini ${n.is_read?'':'unread'}"><span class="notif-dot"></span><div><b>${esc(n.title)}</b><span>${esc(n.message)} • ${esc(n.created_at||'')}</span></div></div>`).join('')}</div>`:'<div class="notification-empty" style="padding:16px 0">You are all caught up.</div>';
-  }
-  const unreadCount=notifications.filter(n=>!n.is_read).length;
-  const badge=document.getElementById('dashNotifBadge');
-  const summary=document.getElementById('dashNotifSummary');
-  if(badge){ badge.textContent=unreadCount?String(unreadCount):''; badge.classList.toggle('has-count',unreadCount>0); }
-  if(summary){ summary.textContent=unreadCount?`${unreadCount} unread update${unreadCount===1?'':'s'}`:(notifications.length?`${notifications.length} recent update${notifications.length===1?'':'s'}`:'No new updates'); }
-
-  const inv=document.getElementById('dashInvoice');
-  const paid=historyRows.find(b=>b.payment_status==='Paid')||historyRows[0];
-  inv.innerHTML=paid?`<div class="panel-heading"><div><span class="eyebrow">LATEST BILLING</span><h3>Latest invoice</h3></div><button class="text-link" onclick="show('payments');loadHistory();renderPayments()">View all →</button></div><div class="invoice-amount">₹${Number(paid.amount||0).toLocaleString('en-IN')}</div><div class="invoice-row"><span>Service</span><b>${esc(paid.service)}</b></div><div class="invoice-row"><span>Status</span><b>${esc(paid.payment_status||'Unpaid')}</b></div>`:`<div class="panel-heading"><div><span class="eyebrow">BILLING</span><h3>Payments & invoices</h3></div></div><p style="font-size:10px;color:#78879a;line-height:1.6">Your invoices and payment history will appear here after your first service.</p>`;
-}
-
-function toggleDashboardNotifications(){
-  const panel=document.getElementById('dashboardNotificationPanel');
-  const toggle=panel?.querySelector('.notification-toggle');
-  if(!panel||!toggle)return;
-  const expanded=!panel.classList.contains('collapsed');
-  panel.classList.toggle('collapsed',expanded);
-  toggle.setAttribute('aria-expanded',String(!expanded));
-  const arrow=document.getElementById('dashNotifArrow');
-  if(arrow)arrow.textContent=expanded?'⌄':'⌃';
-}
-const _oldLoadHistory=loadHistory; loadHistory=async function(){await _oldLoadHistory();renderDashboard()};
-const _oldLoadNotifications=loadNotifications; loadNotifications=async function(){await _oldLoadNotifications();renderDashboard()};
-const _oldLoadServices=loadServices; loadServices=async function(){await _oldLoadServices();renderDashboard()};
-const _oldLoadOffers=loadOffers; loadOffers=async function(){await _oldLoadOffers();renderDashboard()};
 // Keep customer offers synchronized with Admin deletions/updates across tabs.
 (function initOfferSync(){
   let syncing=false;

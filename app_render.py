@@ -17,6 +17,13 @@ def conn():
 
 def now(): return datetime.now().isoformat(timespec='seconds')
 
+def notify_customer(c, customer_id, title, message, booking_id=None):
+    c.execute("INSERT INTO notifications(customer_id,booking_id,title,message,created_at) VALUES(?,?,?,?,?)",(customer_id,booking_id,title,message,now()))
+
+def notify_all_customers(c, title, message):
+    for row in c.execute('SELECT id FROM customers').fetchall():
+        notify_customer(c, row['id'], title, message)
+
 def send_json(h, code, obj, set_cookie=None):
     raw=json.dumps(obj, ensure_ascii=False).encode('utf-8')
     h.send_response(code)
@@ -99,6 +106,7 @@ def migrate_db():
         for col,stmt in {
             "email":"ALTER TABLE customers ADD COLUMN email TEXT DEFAULT ''",
             "address":"ALTER TABLE customers ADD COLUMN address TEXT DEFAULT ''",
+            "pincode":"ALTER TABLE customers ADD COLUMN pincode TEXT DEFAULT ''",
         }.items():
             if col not in ccols: c.execute(stmt)
         bcols={r[1] for r in c.execute('PRAGMA table_info(bookings)').fetchall()}
@@ -317,6 +325,19 @@ class Handler(BaseHTTPRequestHandler):
                                   WHERE b.customer_id=?
                                   ORDER BY b.id DESC''',(cid,)).fetchall()
                 return send_json(self,200,[dict(r) for r in rows])
+            if p.startswith('/api/customer/') and p.endswith('/addresses'):
+                session_cid=require_customer(self)
+                if not session_cid: return
+                try: cid=int(p.split('/')[3])
+                except Exception: return send_json(self,400,{'error':'Invalid customer id'})
+                if cid != session_cid: return send_json(self,403,{'error':'Customer access denied'})
+                c.execute('''CREATE TABLE IF NOT EXISTS customer_addresses(id INTEGER PRIMARY KEY AUTOINCREMENT,customer_id INTEGER NOT NULL,label TEXT NOT NULL DEFAULT 'Default Address',area TEXT DEFAULT '',pincode TEXT DEFAULT '',address TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL,is_default INTEGER NOT NULL DEFAULT 0)''')
+                rows=[dict(x) for x in c.execute('SELECT * FROM customer_addresses WHERE customer_id=? ORDER BY is_default DESC,id DESC',(cid,)).fetchall()]
+                if not rows:
+                    r=c.execute('SELECT * FROM customers WHERE id=?',(cid,)).fetchone()
+                    if r and (r['address'] or r['area']):
+                        nowv=now(); c.execute("INSERT INTO customer_addresses(customer_id,label,area,pincode,address,created_at,updated_at,is_default) VALUES(?,?,?,?,?,?,?,1)",(cid,'Default Address',r['area'] or '', '',r['address'] or '',nowv,nowv)); c.commit(); rows=[dict(x) for x in c.execute('SELECT * FROM customer_addresses WHERE customer_id=? ORDER BY is_default DESC,id DESC',(cid,)).fetchall()]
+                return send_json(self,200,rows)
             if p.startswith('/api/customer/') and p.endswith('/profile'):
                 session_cid=require_customer(self)
                 if not session_cid: return
@@ -453,16 +474,32 @@ class Handler(BaseHTTPRequestHandler):
                 phone=re.sub(r'\D','',str(d.get('phone','')))[-10:]
                 name=str(d.get('name','')).strip()
                 email=str(d.get('email','')).strip().lower()
+                area=str(d.get('area','')).strip()
+                pincode=str(d.get('pincode','')).strip()
                 address=str(d.get('address','')).strip()
                 if len(phone)!=10: return send_json(self,400,{'error':'Valid 10-digit phone required'})
                 if len(name)<2: return send_json(self,400,{'error':'Full name is required'})
                 if not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$',email): return send_json(self,400,{'error':'Valid email address is required'})
+                if not area: return send_json(self,400,{'error':'Area is required'})
+                if not re.match(r'^\d{6}$',pincode): return send_json(self,400,{'error':'Valid 6-digit pincode is required'})
                 if len(address)<8: return send_json(self,400,{'error':'Complete service address is required'})
                 existing=c.execute('SELECT id FROM customers WHERE phone=?',(phone,)).fetchone()
                 if existing: return send_json(self,409,{'error':'An account already exists with this mobile number. Please Login instead.','code':'CUSTOMER_EXISTS'})
-                cur=c.execute('INSERT INTO customers(name,phone,area,email,address,created_at) VALUES(?,?,?,?,?,?)',(name,phone,'',email,address,now()))
+                cur=c.execute('INSERT INTO customers(name,phone,area,email,address,pincode,created_at) VALUES(?,?,?,?,?,?,?)',(name,phone,area,email,address,pincode,now()))
                 cid=cur.lastrowid;c.commit()
                 return send_json(self,201,{'customer':dict(c.execute('SELECT * FROM customers WHERE id=?',(cid,)).fetchone())}, set_cookie=customer_cookie(cid))
+            if p.startswith('/api/customer/') and p.endswith('/addresses'):
+                session_cid=require_customer(self)
+                if not session_cid: return
+                try: cid=int(p.split('/')[3])
+                except Exception: return send_json(self,400,{'error':'Invalid customer id'})
+                if cid != session_cid: return send_json(self,403,{'error':'Customer access denied'})
+                c.execute('''CREATE TABLE IF NOT EXISTS customer_addresses(id INTEGER PRIMARY KEY AUTOINCREMENT,customer_id INTEGER NOT NULL,label TEXT NOT NULL DEFAULT 'Default Address',area TEXT DEFAULT '',pincode TEXT DEFAULT '',address TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL,is_default INTEGER NOT NULL DEFAULT 0)''')
+                address=str(d.get('address','')).strip(); area=str(d.get('area','')).strip(); pincode=str(d.get('pincode','')).strip(); label=str(d.get('label','Default Address')).strip() or 'Address'; is_default=1 if d.get('is_default') else 0
+                if not address:return send_json(self,400,{'error':'Full address is required'})
+                if pincode and not pincode.isdigit() or (pincode and len(pincode)!=6):return send_json(self,400,{'error':'Enter a valid 6-digit pincode'})
+                if is_default:c.execute('UPDATE customer_addresses SET is_default=0 WHERE customer_id=?',(cid,))
+                nowv=now(); cur=c.execute("INSERT INTO customer_addresses(customer_id,label,area,pincode,address,created_at,updated_at,is_default) VALUES(?,?,?,?,?,?,?,?)",(cid,label,area,pincode,address,nowv,nowv,is_default)); c.commit(); return send_json(self,200,dict(c.execute('SELECT * FROM customer_addresses WHERE id=?',(cur.lastrowid,)).fetchone()))
             if p.startswith('/api/customer/') and p.endswith('/profile-change-otp'):
                 session_cid=require_customer(self)
                 if not session_cid: return
@@ -486,6 +523,20 @@ class Handler(BaseHTTPRequestHandler):
             if p=='/api/customer/logout':
                 clear_customer_cookie(self)
                 return send_json(self,200,{'ok':True}, set_cookie='uts_customer_session=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax')
+            if re.match(r'^/api/customer/\\d+/notifications/read-all$',p):
+                session_cid=require_customer(self)
+                if not session_cid:return
+                cid=int(p.strip('/').split('/')[2])
+                if cid!=session_cid:return send_json(self,403,{'error':'Customer access denied'})
+                c.execute('UPDATE notifications SET is_read=1 WHERE customer_id=?',(cid,));c.commit()
+                return send_json(self,200,{'ok':True})
+            if re.match(r'^/api/customer/\\d+/notifications/\\d+/read$',p):
+                session_cid=require_customer(self)
+                if not session_cid:return
+                parts=p.strip('/').split('/');cid=int(parts[2]);nid=int(parts[4])
+                if cid!=session_cid:return send_json(self,403,{'error':'Customer access denied'})
+                c.execute('UPDATE notifications SET is_read=1 WHERE id=? AND customer_id=?',(nid,cid));c.commit()
+                return send_json(self,200,{'ok':True})
             if p=='/api/bookings':
                 # Resolve the logged-in customer first; keep a safe fallback for the
                 # customer_id/phone sent by the customer UI so regular services and
@@ -522,7 +573,7 @@ class Handler(BaseHTTPRequestHandler):
                 cur=c.execute('''INSERT INTO bookings(booking_code,customer_id,service_id,offer_id,address,date,time,problem,amount,status,created_at)
                                  VALUES(?,?,?,?,?,?,?,?,?,?,?)''',(code,cid,sid,offer_id or None,str(d.get('address','')).strip(),str(d.get('date','')),str(d.get('time','')),str(d.get('problem','')).strip(),amount,'Pending',now()))
                 if offer_id:c.execute('INSERT INTO offer_activity(offer_id,customer_id,activity,created_at) VALUES(?,?,?,?)',(offer_id,cid,'book',now()))
-                c.commit(); c.execute("INSERT INTO notifications(customer_id,booking_id,title,message,created_at) VALUES(?,?,?,?,?)",(cid,cur.lastrowid,'Booking confirmed',f'Your booking {code} has been created.',now())); c.commit(); return send_json(self,201,{'id':cur.lastrowid,'booking_code':code,'status':'Pending','amount':amount})
+                c.commit(); notify_customer(c,cid,'Booking confirmed',f'Your booking {code} has been created.',cur.lastrowid); c.commit(); return send_json(self,201,{'id':cur.lastrowid,'booking_code':code,'status':'Pending','amount':amount})
             if p.startswith('/api/engineers/') and p.endswith('/login'):
                 key=p.split('/')[3].strip().upper()
                 phone=re.sub(r'\D','',str(d.get('phone','')))[-10:]
@@ -548,7 +599,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not b:return send_json(self,403,{'error':'This job is not assigned to you'})
                 c.execute('UPDATE bookings SET status=?,engineer_updated_at=? WHERE id=?',(st,now(),b['id']))
                 c.execute("UPDATE engineers SET status=? WHERE id=?",('Available' if st=='Completed' else 'On Job',eid))
-                c.execute("INSERT INTO notifications(customer_id,booking_id,title,message,created_at) VALUES(?,?,?,?,?)",(b['customer_id'],b['id'],'Service update',f'Engineer updated booking status to {st}.',now()))
+                notify_customer(c,b['customer_id'],'Service update',f'Engineer updated booking status to {st}.',b['id'])
                 c.commit(); return send_json(self,200,dict(booking_full(c,b['id'])))
             if p.startswith('/api/engineers/') and '/jobs/' in p and p.endswith('/notes'):
                 parts=p.strip('/').split('/')
@@ -562,7 +613,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not b:return send_json(self,403,{'error':'This job is not assigned to you'})
                 note=str(d.get('notes','')).strip()
                 if len(note)>2000:return send_json(self,400,{'error':'Notes are too long'})
-                c.execute('UPDATE bookings SET engineer_notes=?,engineer_updated_at=? WHERE id=?',(note,now(),b['id'])); c.commit(); return send_json(self,200,dict(booking_full(c,b['id'])))
+                c.execute('UPDATE bookings SET engineer_notes=?,engineer_updated_at=? WHERE id=?',(note,now(),b['id'])); notify_customer(c,b['customer_id'],'Engineer note updated',f'Your engineer added an update to booking {b["booking_code"]}.',b['id']); c.commit(); return send_json(self,200,dict(booking_full(c,b['id'])))
 
             if p.startswith('/api/offers/') and p.endswith('/activity'):
                 cid=require_customer(self)
@@ -579,12 +630,12 @@ class Handler(BaseHTTPRequestHandler):
             if p=='/api/admin/offers':
                 title=str(d.get('title','')).strip(); desc=str(d.get('description','')).strip(); discount=str(d.get('discount','')).strip(); fixed=int(d.get('fixed_price',0) or 0); price_text=str(d.get('price_text') or f'₹{fixed:,}').strip(); badge=str(d.get('badge','LIMITED OFFER')).strip() or 'LIMITED OFFER'; icon=str(d.get('icon','✦')).strip() or '✦'; valid=str(d.get('valid_until','')).strip(); status=str(d.get('status','active')).strip() or 'active'; sid=d.get('service_id') or None
                 if not title or not desc or fixed<=0 or not sid: return send_json(self,400,{'error':'Offer title, description, service and fixed price are required'})
-                cur=c.execute('INSERT INTO offers(title,description,discount,price_text,fixed_price,badge,icon,service_id,valid_until,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',(title,desc,discount,price_text,fixed,badge,icon,sid,valid,status,now(),now())); c.commit()
+                cur=c.execute('INSERT INTO offers(title,description,discount,price_text,fixed_price,badge,icon,service_id,valid_until,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',(title,desc,discount,price_text,fixed,badge,icon,sid,valid,status,now(),now())); notify_all_customers(c,'New offer available',f'{title} is now available. Open Offers to view the details.'); c.commit()
                 return send_json(self,201,dict(c.execute('SELECT * FROM offers WHERE id=?',(cur.lastrowid,)).fetchone()))
             if p=='/api/admin/services':
                 name=str(d.get('name','')).strip(); price=int(d.get('price',0) or 0); icon=str(d.get('icon','◉')) or '◉'; desc=str(d.get('description','')); status=str(d.get('status','active'))
                 if not name or price<0: return send_json(self,400,{'error':'Valid service required'})
-                try: cur=c.execute('INSERT INTO services(name,icon,description,price,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?)',(name,icon,desc,price,status,now(),now())); c.commit()
+                try: cur=c.execute('INSERT INTO services(name,icon,description,price,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?)',(name,icon,desc,price,status,now(),now())); notify_all_customers(c,'New service available',f'{name} has been added to our services. Open Services to view it.'); c.commit()
                 except sqlite3.IntegrityError: return send_json(self,409,{'error':'Service name already exists'})
                 return send_json(self,201,dict(c.execute('SELECT * FROM services WHERE id=?',(cur.lastrowid,)).fetchone()))
             if p=='/api/admin/engineers':
@@ -601,7 +652,7 @@ class Handler(BaseHTTPRequestHandler):
                 b=c.execute('SELECT * FROM bookings WHERE booking_code=? OR CAST(id AS TEXT)=?',(value,value)).fetchone(); e=c.execute("SELECT * FROM engineers WHERE id=? AND active=1 AND status='Available'",(eid,)).fetchone()
                 if not b:return send_json(self,404,{'error':'Booking not found'})
                 if not e:return send_json(self,409,{'error':'Engineer not found or not available'})
-                c.execute("UPDATE bookings SET engineer_id=?,status='Assigned' WHERE id=?",(eid,b['id'])); c.execute("UPDATE engineers SET status='On Job' WHERE id=?",(eid,)); c.execute("INSERT INTO notifications(customer_id,booking_id,title,message,created_at) VALUES(?,?,?,?,?)",(b['customer_id'],b['id'],'Engineer assigned',f'{e["name"]} has been assigned to your service.',now())); c.commit()
+                c.execute("UPDATE bookings SET engineer_id=?,status='Assigned' WHERE id=?",(eid,b['id'])); c.execute("UPDATE engineers SET status='On Job' WHERE id=?",(eid,)); notify_customer(c,b['customer_id'],'Engineer assigned',f'{e["name"]} has been assigned to your service.',b['id']); c.commit()
                 return send_json(self,200,dict(booking_full(c,b['id'])))
             if p.startswith('/api/admin/bookings/') and p.endswith('/status'):
                 value=p.split('/')[4]; st=str(d.get('status','')).strip()
@@ -622,7 +673,7 @@ class Handler(BaseHTTPRequestHandler):
                     c.execute('UPDATE bookings SET status=?,closed_at=? WHERE id=?',(st,now(),b['id'])); title='Booking closed'; msg='Your service booking is now closed.'
                     if b['engineer_id']: c.execute("UPDATE engineers SET status='Available' WHERE id=?",(b['engineer_id'],))
                 else: c.execute('UPDATE bookings SET status=? WHERE id=?',(st,b['id'])); title='Booking updated'; msg=f'Your booking status is now {st}.'
-                c.execute("INSERT INTO notifications(customer_id,booking_id,title,message,created_at) VALUES(?,?,?,?,?)",(b['customer_id'],b['id'],title,msg,now()))
+                notify_customer(c,b['customer_id'],title,msg,b['id'])
                 c.commit();return send_json(self,200,dict(booking_full(c,b['id'])))
 
             if p.startswith('/api/bookings/') and p.endswith('/cancel'):
@@ -638,7 +689,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not reason:
                     return send_json(self,400,{'error':'Please select or enter a cancellation reason.'})
                 c.execute("UPDATE bookings SET status='Cancelled', cancellation_reason=? WHERE id=?",(reason,b['id']))
-                c.execute("INSERT INTO notifications(customer_id,booking_id,title,message,created_at) VALUES(?,?,?,?,?)",(b['customer_id'],b['id'],'Booking cancelled',f'Your booking {b["booking_code"]} has been cancelled successfully. Reason: {reason}',now()))
+                notify_customer(c,b['customer_id'],'Booking cancelled',f'Your booking {b["booking_code"]} has been cancelled successfully. Reason: {reason}',b['id'])
                 c.commit()
                 return send_json(self,200,dict(booking_full(c,b['id'])))
             if p.startswith('/api/bookings/') and p.endswith('/confirm'):
@@ -650,7 +701,7 @@ class Handler(BaseHTTPRequestHandler):
                 if b['status']!='Completed':return send_json(self,409,{'error':'Admin must mark the service Completed first'})
                 c.execute("UPDATE bookings SET customer_confirmed_at=?,status='Closed',closed_at=? WHERE id=?",(now(),now(),b['id']))
                 if b['engineer_id']: c.execute("UPDATE engineers SET status='Available' WHERE id=?",(b['engineer_id'],))
-                c.execute("INSERT INTO notifications(customer_id,booking_id,title,message,created_at) VALUES(?,?,?,?,?)",(b['customer_id'],b['id'],'Service closed','Thank you. Your service booking is now closed.',now()))
+                notify_customer(c,b['customer_id'],'Service closed','Thank you. Your service booking is now closed.',b['id'])
                 c.commit();return send_json(self,200,dict(booking_full(c,b['id'])))
 
             if p.startswith('/api/bookings/') and p.endswith('/pay'):
@@ -665,7 +716,7 @@ class Handler(BaseHTTPRequestHandler):
                 pid='PAY-'+secrets.token_hex(4).upper()
                 paid_at=now()
                 c.execute("UPDATE bookings SET payment_status='Paid',payment_id=?,payment_utr=?,paid_at=? WHERE id=?",(pid,utr,paid_at,b['id']))
-                c.execute("INSERT INTO notifications(customer_id,booking_id,title,message,created_at) VALUES(?,?,?,?,?)",(cid,b['id'],'Payment successful',f'Payment received. UTR {utr}. Receipt {pid}.',now()))
+                notify_customer(c,cid,'Payment successful',f'Payment received. UTR {utr}. Receipt {pid}.',b['id'])
                 c.commit();return send_json(self,200,dict(booking_full(c,b['id'])))
 
             if p.startswith('/api/customer/') and p.endswith('/support'):
@@ -683,7 +734,7 @@ class Handler(BaseHTTPRequestHandler):
                     except: booking_id=None
                     if booking_id and not c.execute('SELECT id FROM bookings WHERE id=? AND customer_id=?',(booking_id,cid)).fetchone(): return send_json(self,403,{'error':'Booking mismatch'})
                 cur=c.execute('INSERT INTO support_tickets(customer_id,booking_id,subject,message,status,created_at) VALUES(?,?,?,?,?,?)',(cid,booking_id,subject,message,'Open',now()))
-                c.execute('INSERT INTO notifications(customer_id,booking_id,title,message,created_at) VALUES(?,?,?,?,?)',(cid,booking_id,'Support request received',f'Your support ticket #{cur.lastrowid} is open.',now()))
+                notify_customer(c,cid,'Support request received',f'Your support ticket #{cur.lastrowid} is open.',booking_id)
                 c.commit(); return send_json(self,201,dict(c.execute('SELECT * FROM support_tickets WHERE id=?',(cur.lastrowid,)).fetchone()))
             if p.startswith('/api/bookings/') and p.endswith('/review'):
                 value=p.split('/')[3]; cid=require_customer(self)
@@ -695,12 +746,27 @@ class Handler(BaseHTTPRequestHandler):
                 if b['status'] not in ('Completed','Closed'):return send_json(self,409,{'error':'Review available after completion'})
                 if rating<1 or rating>5:return send_json(self,400,{'error':'Rating must be 1 to 5'})
                 c.execute('UPDATE bookings SET review_rating=?,review_text=?,reviewed_at=? WHERE id=?',(rating,review,now(),b['id']))
-                c.commit();return send_json(self,200,dict(booking_full(c,b['id'])))
+                notify_customer(c,cid,'Review submitted','Thank you for rating your service.',b['id']); c.commit();return send_json(self,200,dict(booking_full(c,b['id'])))
             self.send_error(404)
         finally:c.close()
     def do_PUT(self):
         p=urlparse(self.path).path; d=read_json(self); c=conn()
         try:
+            if p.startswith('/api/customer/') and '/addresses/' in p:
+                session_cid=require_customer(self)
+                if not session_cid:return
+                parts=p.split('/')
+                try: cid=int(parts[3]); aid=int(parts[5])
+                except Exception:return send_json(self,400,{'error':'Invalid address'})
+                if cid!=session_cid:return send_json(self,403,{'error':'Customer access denied'})
+                c.execute('''CREATE TABLE IF NOT EXISTS customer_addresses(id INTEGER PRIMARY KEY AUTOINCREMENT,customer_id INTEGER NOT NULL,label TEXT NOT NULL DEFAULT 'Default Address',area TEXT DEFAULT '',pincode TEXT DEFAULT '',address TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL,is_default INTEGER NOT NULL DEFAULT 0)''')
+                r=c.execute('SELECT * FROM customer_addresses WHERE id=? AND customer_id=?',(aid,cid)).fetchone()
+                if not r:return send_json(self,404,{'error':'Address not found'})
+                address=str(d.get('address',r['address'])).strip(); area=str(d.get('area',r['area'] or '')).strip(); pincode=str(d.get('pincode',r['pincode'] or '')).strip(); label=str(d.get('label',r['label'] or 'Address')).strip() or 'Address'; is_default=1 if d.get('is_default') else 0
+                if not address:return send_json(self,400,{'error':'Full address is required'})
+                if pincode and (not pincode.isdigit() or len(pincode)!=6):return send_json(self,400,{'error':'Enter a valid 6-digit pincode'})
+                if is_default:c.execute('UPDATE customer_addresses SET is_default=0 WHERE customer_id=?',(cid,))
+                c.execute('UPDATE customer_addresses SET label=?,area=?,pincode=?,address=?,updated_at=?,is_default=? WHERE id=? AND customer_id=?',(label,area,pincode,address,now(),is_default,aid,cid)); c.commit(); return send_json(self,200,dict(c.execute('SELECT * FROM customer_addresses WHERE id=?',(aid,)).fetchone()))
             if p.startswith('/api/customer/') and p.endswith('/profile-change-otp'):
                 session_cid=require_customer(self)
                 if not session_cid: return
@@ -724,7 +790,7 @@ class Handler(BaseHTTPRequestHandler):
                 if otp!='123456': return send_json(self,401,{'error':'Invalid OTP'})
                 if typ=='email': c.execute('UPDATE customers SET email=? WHERE id=?',(value.lower(),cid))
                 else: c.execute('UPDATE customers SET phone=? WHERE id=?',(value,cid))
-                c.commit()
+                notify_customer(c,cid,'Contact details updated',f'Your {typ} was changed successfully.'); c.commit()
                 return send_json(self,200,{'customer':dict(c.execute('SELECT * FROM customers WHERE id=?',(cid,)).fetchone()),'message':'Profile contact updated successfully.'})
             if p.startswith('/api/customer/') and p.endswith('/profile'):
                 session_cid=require_customer(self)
@@ -735,8 +801,11 @@ class Handler(BaseHTTPRequestHandler):
                 if cid != session_cid: return send_json(self,403,{'error':'Customer access denied'})
                 r=c.execute('SELECT * FROM customers WHERE id=?',(cid,)).fetchone()
                 if not r:return send_json(self,404,{'error':'Customer not found'})
-                name=str(d.get('name',r['name'])).strip() or r['name']; email=str(d.get('email',r['email'] or '')).strip(); area=str(d.get('area',r['area'] or '')).strip(); address=str(d.get('address',r['address'] or '')).strip()
-                c.execute('UPDATE customers SET name=?,email=?,area=?,address=? WHERE id=?',(name,email,area,address,cid)); c.commit()
+                name=str(d.get('name',r['name'])).strip() or r['name']; email=str(d.get('email',r['email'] or '')).strip(); area=str(d.get('area',r['area'] or '')).strip(); pincode=str(d.get('pincode',r['pincode'] or '')).strip(); address=str(d.get('address',r['address'] or '')).strip()
+                if not area:return send_json(self,400,{'error':'Area is required'})
+                if not re.match(r'^\d{6}$',pincode):return send_json(self,400,{'error':'Valid 6-digit pincode is required'})
+                if len(address)<8:return send_json(self,400,{'error':'Complete service address is required'})
+                c.execute('UPDATE customers SET name=?,email=?,area=?,address=?,pincode=? WHERE id=?',(name,email,area,address,pincode,cid)); notify_customer(c,cid,'Profile updated','Your personal details and service address were updated.'); c.commit()
                 return send_json(self,200,dict(c.execute('SELECT * FROM customers WHERE id=?',(cid,)).fetchone()))
             if p.startswith('/api/admin/offers/'):
                 oid=int(p.rsplit('/',1)[1]); r=c.execute('SELECT * FROM offers WHERE id=?',(oid,)).fetchone()
