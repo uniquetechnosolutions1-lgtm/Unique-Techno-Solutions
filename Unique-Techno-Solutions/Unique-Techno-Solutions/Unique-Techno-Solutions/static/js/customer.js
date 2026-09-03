@@ -514,7 +514,7 @@ async function verifyProfileChangeOtp(){
   }catch(e){alert(e.message)}
 }
 
-async function saveProfile(){try{customer=await api('/api/customer/'+customer.id+'/profile',{method:'PUT',body:JSON.stringify({name:document.getElementById('pName').value,email:document.getElementById('pEmail').value,area:document.getElementById('pArea').value,address:document.getElementById('pAddress').value})});renderProfile();toast('Profile updated.')}catch(e){alert(e.message)}}
+async function saveProfile(){try{customer=await api('/api/customer/'+customer.id+'/profile',{method:'PUT',body:JSON.stringify({name:document.getElementById('pName').value})});renderProfile();toast('Personal details updated.')}catch(e){alert(e.message)}}
 function updateProfileCompletion(){
   const fields=[customer?.name,customer?.phone,customer?.email,customer?.area,customer?.address];
   const done=fields.filter(x=>String(x||'').trim()).length;
@@ -531,11 +531,96 @@ function openAddressModal(id=null){const m=document.getElementById('addressModal
 function closeAddressModal(){const m=document.getElementById('addressModal');if(m){m.style.display='none';m.setAttribute('aria-hidden','true')}}
 async function loadAddresses(){if(!customer?.id)return;try{window.customerAddresses=await api('/api/customer/'+customer.id+'/addresses');renderAddresses()}catch(e){const b=document.getElementById('addressBookList');if(b)b.innerHTML='<div class="notification-empty">Could not load addresses.</div>'}}
 function renderAddresses(){const b=document.getElementById('addressBookList');if(!b)return;const rows=window.customerAddresses||[];if(!rows.length){b.innerHTML='<div class="address-empty">No saved addresses yet. Add your first service address.</div>';return}b.innerHTML=rows.map(r=>`<div class="address-card"><div class="address-card-top"><div><b>${esc(r.label||'Address')}</b>${r.is_default?'<span class="address-default">DEFAULT</span>':''}</div><div class="address-actions"><button type="button" onclick="openAddressModal(${r.id})">Edit</button><button type="button" onclick="deleteAddress(${r.id})">Delete</button></div></div><div class="address-meta">${esc(r.area||'')}${r.pincode?' • '+esc(r.pincode):''}</div><p>${esc(r.address||'')}</p></div>`).join('')}
-async function saveAddress(){try{const id=document.getElementById('addressEditId').value;const payload={label:document.getElementById('addressLabel').value.trim()||'Address',area:document.getElementById('addressArea').value.trim(),pincode:document.getElementById('addressPincode').value.trim(),address:document.getElementById('addressFull').value.trim(),is_default:document.getElementById('addressDefault').checked};if(!payload.address)throw Error('Full address is required.');if(payload.pincode&&!/^\d{6}$/.test(payload.pincode))throw Error('Enter a valid 6-digit pincode.');customerAddresses=await api(id?'/api/customer/'+customer.id+'/addresses/'+id:'/api/customer/'+customer.id+'/addresses',{method:id?'PUT':'POST',body:JSON.stringify(payload)});closeAddressModal();renderAddresses();toast('Address saved successfully.')}catch(e){alert(e.message)}}
+async function saveAddress(){try{const id=document.getElementById('addressEditId').value;const payload={label:document.getElementById('addressLabel').value.trim()||'Address',area:document.getElementById('addressArea').value.trim(),pincode:document.getElementById('addressPincode').value.trim(),address:document.getElementById('addressFull').value.trim(),is_default:document.getElementById('addressDefault').checked};if(!payload.address)throw Error('Full address is required.');if(payload.pincode&&!/^\d{6}$/.test(payload.pincode))throw Error('Enter a valid 6-digit pincode.');window.customerAddresses=await api(id?'/api/customer/'+customer.id+'/addresses/'+id:'/api/customer/'+customer.id+'/addresses',{method:id?'PUT':'POST',body:JSON.stringify(payload)});closeAddressModal();renderAddresses();toast('Address saved successfully.')}catch(e){alert(e.message)}}
 async function deleteAddress(id){if(!confirm('Delete this saved address?'))return;try{await api('/api/customer/'+customer.id+'/addresses/'+id,{method:'DELETE'});await loadAddresses();toast('Address deleted.')}catch(e){alert(e.message)}}
-async function loadNotifications(){if(!customer?.id)return;try{notifications=await api('/api/customer/'+customer.id+'/notifications');renderNotifications();document.getElementById('notifCount').textContent=notifications.filter(n=>!n.is_read).length||''}catch(e){document.getElementById('notificationList').innerHTML='<div class="notification-empty">No notifications.</div>'}}
-function renderNotifications(){const box=document.getElementById('notificationList');if(!notifications.length){box.innerHTML='<div class="notification-empty">No notifications.</div>';return}box.innerHTML=notifications.map(n=>`<div class="notification ${n.is_read?'':'unread'}"><b>${esc(n.title)}</b><span>${esc(n.message)}</span><span>${esc(n.created_at)}</span></div>`).join('')}
+async function loadNotifications(){if(!customer?.id)return;try{notifications=await api('/api/customer/'+customer.id+'/notifications');renderNotifications();updateNotificationBadges();updateFloatingNotificationPanel()}catch(e){document.getElementById('notificationList').innerHTML='<div class="notification-empty">No notifications.</div>'}}
+function renderNotifications(){
+  const box=document.getElementById('notificationList');
+  if(!box)return;
+  if(!notifications.length){box.innerHTML='<div class="notification-empty">No notifications.</div>';return}
+  box.innerHTML=notifications.map(n=>`<article class="notification ${n.is_read?'read':'unread'}" data-notification-id="${n.id}">
+    <button type="button" class="notification-main" aria-expanded="false">
+      <span class="notification-status-dot"></span>
+      <span class="notification-copy"><b>${esc(n.title)}</b><span>${esc(n.message)}</span><small>${esc(n.created_at||'')}</small></span>
+      <span class="notification-chevron">⌄</span>
+    </button>
+    <div class="notification-details" hidden>
+      <div class="notification-detail-message">${esc(n.message)}</div>
+      <div class="notification-detail-meta"><span>Received</span><b>${esc(n.created_at||'—')}</b></div>
+      <div class="notification-detail-meta"><span>Status</span><b class="notification-read-state">${n.is_read?'✓ Read':'● Unread'}</b></div>
+      <button type="button" class="notification-mark-read" data-mark-read="${n.id}" ${n.is_read?'disabled':''}>${n.is_read?'✓ Read':'✓ Mark as read'}</button>
+    </div>
+  </article>`).join('');
+  updateFloatingNotificationPanel();
+}
+async function markNotificationRead(id){
+  if(!customer?.id||!id)return false;
+  try{
+    await api('/api/customer/'+customer.id+'/notifications/read',{method:'POST',body:JSON.stringify({notification_id:id})});
+    const n=notifications.find(x=>Number(x.id)===Number(id));
+    if(n)n.is_read=1;
+    renderNotifications();
+    updateNotificationBadges();
+    if(typeof renderDashboard==='function')renderDashboard();
+    return true;
+  }catch(e){alert(e?.message||'Could not mark notification as read.');return false}
+}
+async function markAllNotificationsRead(){if(!customer?.id)return;try{await api('/api/customer/'+customer.id+'/notifications/read-all',{method:'POST',body:JSON.stringify({})});notifications.forEach(n=>n.is_read=1);renderNotifications();updateNotificationBadges();updateFloatingNotificationPanel();if(typeof renderDashboard==='function')renderDashboard();toast('All notifications marked as read.');}catch(e){alert(e?.message||'Could not mark notifications as read.')}}
+function updateFloatingNotificationPanel(){
+  const list=document.getElementById('floatingNotificationList');
+  if(!list)return;
+  const recent=notifications.slice(0,8);
+  list.innerHTML=recent.length?recent.map(n=>`<article class=\"floating-notification-item ${n.is_read?'read':'unread'}\" data-floating-notification=\"${n.id}\">
+    <button type=\"button\" class=\"floating-notification-summary\" aria-expanded=\"false\">
+      <span class=\"floating-notification-dot\"></span><span class=\"floating-notification-copy\"><b>${esc(n.title)}</b><small>${esc(n.message)}</small><em>${esc(n.created_at||'')}</em></span><span class=\"floating-notification-chevron\">⌄</span>
+    </button>
+    <div class=\"floating-notification-details\" hidden>
+      <p>${esc(n.message)}</p><div><span>Received</span><b>${esc(n.created_at||'—')}</b></div>
+      <div><span>Status</span><b class=\"floating-read-state\">${n.is_read?'✓ Read':'● Unread'}</b></div>
+      <button type=\"button\" class=\"floating-mark-read\" data-floating-mark-read=\"${n.id}\" ${n.is_read?'disabled':''}>${n.is_read?'✓ Read':'✓ Mark as read'}</button>
+    </div>
+  </article>`).join(''):'<div class=\"floating-notification-empty\">No notifications</div>';
+}
+function toggleFloatingNotifications(){
+  const p=document.getElementById('floatingNotificationPanel'); if(!p)return;
+  if(typeof closeAccountMenu==='function')closeAccountMenu();
+  p.classList.toggle('open');
+  p.setAttribute('aria-hidden',p.classList.contains('open')?'false':'true');
+}
+function closeFloatingNotifications(){const p=document.getElementById('floatingNotificationPanel');if(p){p.classList.remove('open');p.setAttribute('aria-hidden','true')}}
+function updateNotificationBadges(){const unread=notifications.filter(n=>!n.is_read).length;const count=document.getElementById('notifCount');if(count)count.textContent=unread||'';const side=document.getElementById('sideNotifCount');if(side){side.textContent=unread||'';side.classList.toggle('has',unread>0)}const fab=document.getElementById('floatingNotifCount');if(fab){fab.textContent=unread||'';fab.style.display=unread?'inline-flex':'none'}}
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',2200)}
+document.addEventListener('click',async function(e){
+  const main=e.target.closest('.notification-main');
+  if(main){
+    const card=main.closest('.notification');
+    if(!card)return;
+    const details=card.querySelector('.notification-details');
+    const open=card.classList.toggle('expanded');
+    main.setAttribute('aria-expanded',String(open));
+    if(details)details.hidden=!open;
+    card.parentElement?.querySelectorAll('.notification.expanded').forEach(x=>{if(x!==card){x.classList.remove('expanded');const m=x.querySelector('.notification-main');const d=x.querySelector('.notification-details');if(m)m.setAttribute('aria-expanded','false');if(d)d.hidden=true;}});
+    return;
+  }
+  const rb=e.target.closest('[data-mark-read]');
+  if(rb){e.preventDefault();e.stopPropagation();await markNotificationRead(Number(rb.dataset.markRead));return;}
+  const fmr=e.target.closest('[data-floating-mark-read]');
+  if(fmr){e.preventDefault();e.stopPropagation();await markNotificationRead(Number(fmr.dataset.floatingMarkRead));return;}
+  const fs=e.target.closest('.floating-notification-summary');
+  if(fs){
+    e.preventDefault();e.stopPropagation();
+    const card=fs.closest('.floating-notification-item'); if(!card)return;
+    const open=card.classList.toggle('expanded'); fs.setAttribute('aria-expanded',String(open));
+    const d=card.querySelector('.floating-notification-details'); if(d)d.hidden=!open;
+    card.parentElement?.querySelectorAll('.floating-notification-item.expanded').forEach(x=>{if(x!==card){x.classList.remove('expanded');const b=x.querySelector('.floating-notification-summary');const d2=x.querySelector('.floating-notification-details');if(b)b.setAttribute('aria-expanded','false');if(d2)d2.hidden=true;}});
+    return;
+  }
+  const f=e.target.closest('#floatingNotifBtn');
+  if(f){e.preventDefault();e.stopPropagation();toggleFloatingNotifications();return;}
+  const panel=document.getElementById('floatingNotificationPanel');
+  if(panel&&!panel.contains(e.target))closeFloatingNotifications();
+});
+
 async function initCustomerAuth(){try{const d=await api('/api/customer/session');if(d.customer){customer=d.customer;document.body.classList.add('customer-auth');await Promise.all([loadServices(),loadOffers(),loadHistory(),loadProfile(),loadNotifications()]);show('home');return}}catch(e){} document.body.classList.remove('customer-auth');show('login')}
 initCustomerAuth();
 

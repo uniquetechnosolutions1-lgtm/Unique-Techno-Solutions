@@ -98,12 +98,16 @@ async function verifyAuthOtp(){
 async function completeSignup(){
   const name=document.getElementById('signupName').value.trim();
   const email=document.getElementById('signupEmail').value.trim();
+  const area=document.getElementById('signupArea').value.trim();
+  const pincode=document.getElementById('signupPincode').value.trim();
   const address=document.getElementById('signupAddress').value.trim();
   if(name.length<2)return alert('Please enter your full name.');
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return alert('Please enter a valid email address.');
+  if(!area)return alert('Please enter your area.');
+  if(!/^\d{6}$/.test(pincode))return alert('Please enter a valid 6-digit pincode.');
   if(address.length<8)return alert('Please enter your complete service address.');
   try{
-    const d=await api('/api/customer/signup',{method:'POST',body:JSON.stringify({phone:document.getElementById('signupPhone').value,otp:document.getElementById('otp').value.trim(),name,email,address})});
+    const d=await api('/api/customer/signup',{method:'POST',body:JSON.stringify({phone:document.getElementById('signupPhone').value,otp:document.getElementById('otp').value.trim(),name,email,area,pincode,address})});
     customer=d.customer;
     document.body.classList.add('customer-auth');
     await Promise.all([loadServices(),loadOffers(),loadHistory(),loadProfile(),loadNotifications()]);
@@ -516,7 +520,7 @@ async function verifyProfileChangeOtp(){
 
 async function saveProfile(){try{customer=await api('/api/customer/'+customer.id+'/profile',{method:'PUT',body:JSON.stringify({name:document.getElementById('pName').value,email:document.getElementById('pEmail').value,area:document.getElementById('pArea').value,address:document.getElementById('pAddress').value})});renderProfile();toast('Profile updated.')}catch(e){alert(e.message)}}
 function updateProfileCompletion(){
-  const fields=[customer?.name,customer?.phone,customer?.email,customer?.area,customer?.address];
+  const fields=[customer?.name,customer?.phone,customer?.email,customer?.area,customer?.pincode,customer?.address];
   const done=fields.filter(x=>String(x||'').trim()).length;
   const pct=Math.round(done/fields.length*100);
   const a=document.getElementById('profileCompletionPct'); if(a)a.textContent=pct+'%';
@@ -526,13 +530,8 @@ function updateProfileCompletion(){
   const sec=document.getElementById('profileSecurity');
   if(sec)sec.innerHTML='<div class="security-row"><span>✓</span><div><b>Mobile verified</b><small>'+esc(customer?.phone||'Not available')+'</small></div></div><div class="security-row"><span>✓</span><div><b>Email '+(customer?.email?'available':'pending')+'</b><small>'+(customer?.email||'Add an email for account recovery')+'</small></div></div>';
 }
-function renderProfile(){const n=(customer.name||'C').split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase();document.getElementById('profileAvatar').textContent=n;document.getElementById('profileWelcome').textContent='Welcome, '+(customer.name||'Customer');document.getElementById('pName').value=customer.name||'';document.getElementById('pPhone').value=customer.phone||'';document.getElementById('pEmail').value=customer.email||'';updateAccountControl();updateProfileCompletion();loadAddresses();}
-function openAddressModal(id=null){const m=document.getElementById('addressModal'); if(!m)return; const r=(window.customerAddresses||[]).find(x=>Number(x.id)===Number(id)); document.getElementById('addressEditId').value=r?r.id:''; document.getElementById('addressModalTitle').textContent=r?'Edit Address':'Add Address'; document.getElementById('addressLabel').value=r?.label||''; document.getElementById('addressArea').value=r?.area||''; document.getElementById('addressPincode').value=r?.pincode||''; document.getElementById('addressFull').value=r?.address||''; document.getElementById('addressDefault').checked=!!r?.is_default; m.style.display='flex';m.setAttribute('aria-hidden','false');}
-function closeAddressModal(){const m=document.getElementById('addressModal');if(m){m.style.display='none';m.setAttribute('aria-hidden','true')}}
-async function loadAddresses(){if(!customer?.id)return;try{window.customerAddresses=await api('/api/customer/'+customer.id+'/addresses');renderAddresses()}catch(e){const b=document.getElementById('addressBookList');if(b)b.innerHTML='<div class="notification-empty">Could not load addresses.</div>'}}
-function renderAddresses(){const b=document.getElementById('addressBookList');if(!b)return;const rows=window.customerAddresses||[];if(!rows.length){b.innerHTML='<div class="address-empty">No saved addresses yet. Add your first service address.</div>';return}b.innerHTML=rows.map(r=>`<div class="address-card"><div class="address-card-top"><div><b>${esc(r.label||'Address')}</b>${r.is_default?'<span class="address-default">DEFAULT</span>':''}</div><div class="address-actions"><button type="button" onclick="openAddressModal(${r.id})">Edit</button><button type="button" onclick="deleteAddress(${r.id})">Delete</button></div></div><div class="address-meta">${esc(r.area||'')}${r.pincode?' • '+esc(r.pincode):''}</div><p>${esc(r.address||'')}</p></div>`).join('')}
-async function saveAddress(){try{const id=document.getElementById('addressEditId').value;const payload={label:document.getElementById('addressLabel').value.trim()||'Address',area:document.getElementById('addressArea').value.trim(),pincode:document.getElementById('addressPincode').value.trim(),address:document.getElementById('addressFull').value.trim(),is_default:document.getElementById('addressDefault').checked};if(!payload.address)throw Error('Full address is required.');if(payload.pincode&&!/^\d{6}$/.test(payload.pincode))throw Error('Enter a valid 6-digit pincode.');customerAddresses=await api(id?'/api/customer/'+customer.id+'/addresses/'+id:'/api/customer/'+customer.id+'/addresses',{method:id?'PUT':'POST',body:JSON.stringify(payload)});closeAddressModal();renderAddresses();toast('Address saved successfully.')}catch(e){alert(e.message)}}
-async function deleteAddress(id){if(!confirm('Delete this saved address?'))return;try{await api('/api/customer/'+customer.id+'/addresses/'+id,{method:'DELETE'});await loadAddresses();toast('Address deleted.')}catch(e){alert(e.message)}}
+function renderProfile(){const n=(customer.name||'C').split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase();const av=document.getElementById('profileAvatar');if(av)av.textContent=n;document.getElementById('profileWelcome').textContent='Welcome, '+(customer.name||'Customer');document.getElementById('pName').value=customer.name||'';document.getElementById('pPhone').value=customer.phone||'';document.getElementById('pEmail').value=customer.email||'';const pa=document.getElementById('pArea');if(pa)pa.value=customer.area||'';const pp=document.getElementById('pPincode');if(pp)pp.value=customer.pincode||'';const pad=document.getElementById('pAddress');if(pad)pad.value=customer.address||'';const ba=document.getElementById('address');if(ba && customer.address)ba.value=customer.address;updateAccountControl();updateProfileCompletion();}
+async function saveAddress(){try{const area=(document.getElementById('pArea')?.value||'').trim();const pincode=(document.getElementById('pPincode')?.value||'').trim();const address=(document.getElementById('pAddress')?.value||'').trim();if(!area)throw Error('Area is required.');if(!/^\d{6}$/.test(pincode))throw Error('Enter a valid 6-digit pincode.');if(address.length<8)throw Error('Complete service address is required.');const updated=await api('/api/customer/'+customer.id+'/profile',{method:'PUT',body:JSON.stringify({name:customer.name,email:customer.email,area,pincode,address})});customer=updated;localStorage.setItem('customer',JSON.stringify(customer));updateProfileCompletion();toast('Address saved successfully.')}catch(e){alert(e.message)}}
 async function loadNotifications(){if(!customer?.id)return;try{notifications=await api('/api/customer/'+customer.id+'/notifications');renderNotifications();document.getElementById('notifCount').textContent=notifications.filter(n=>!n.is_read).length||''}catch(e){document.getElementById('notificationList').innerHTML='<div class="notification-empty">No notifications.</div>'}}
 function renderNotifications(){const box=document.getElementById('notificationList');if(!notifications.length){box.innerHTML='<div class="notification-empty">No notifications.</div>';return}box.innerHTML=notifications.map(n=>`<div class="notification ${n.is_read?'':'unread'}"><b>${esc(n.title)}</b><span>${esc(n.message)}</span><span>${esc(n.created_at)}</span></div>`).join('')}
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',2200)}
@@ -745,7 +744,7 @@ function updateAccountControl(){
   if(n)n.textContent=name; if(p)p.textContent=customer?.phone||'My Account';
   const pa=document.getElementById('profileAvatar'); if(pa){pa.innerHTML=photo?`<img src="${photo}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:initials}
 }
-function toggleAccountMenu(){const m=document.getElementById('accountMenu');if(!m)return;if(typeof closeFloatingNotifications==='function')closeFloatingNotifications();m.classList.toggle('open');m.setAttribute('aria-hidden',m.classList.contains('open')?'false':'true');updateAccountControl()}
+function toggleAccountMenu(){const m=document.getElementById('accountMenu');if(!m)return;m.classList.toggle('open');m.setAttribute('aria-hidden',m.classList.contains('open')?'false':'true');updateAccountControl()}
 function closeAccountMenu(){const m=document.getElementById('accountMenu');if(m){m.classList.remove('open');m.setAttribute('aria-hidden','true')}}
 function openAccountProfile(){closeAccountMenu();show('profile','profile');loadProfile();setTimeout(()=>document.getElementById('pName')?.focus(),120)}
 function triggerProfilePhoto(){closeAccountMenu();document.getElementById('profilePhotoInput')?.click()}

@@ -327,6 +327,19 @@ class Handler(BaseHTTPRequestHandler):
                 r=c.execute('SELECT * FROM customers WHERE id=?',(cid,)).fetchone()
                 if not r:return send_json(self,404,{'error':'Customer not found'})
                 return send_json(self,200,dict(r))
+            if p.startswith('/api/customer/') and p.endswith('/notifications/read'):
+                session_cid=require_customer(self)
+                if not session_cid: return
+                try: cid=int(p.split('/')[3])
+                except Exception: return send_json(self,400,{'error':'Invalid customer id'})
+                if cid != session_cid: return send_json(self,403,{'error':'Customer access denied'})
+                if d.get('all'):
+                    c.execute('UPDATE notifications SET is_read=1 WHERE customer_id=?',(cid,))
+                else:
+                    try: nid=int(d.get('id'))
+                    except Exception: return send_json(self,400,{'error':'Invalid notification id'})
+                    c.execute('UPDATE notifications SET is_read=1 WHERE id=? AND customer_id=?',(nid,cid))
+                c.commit(); return send_json(self,200,{'ok':True})
             if p.startswith('/api/customer/') and p.endswith('/notifications'):
                 session_cid=require_customer(self)
                 if not session_cid: return
@@ -435,24 +448,6 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         p=urlparse(self.path).path; d=read_json(self); c=conn()
         try:
-            # Customer notification read actions MUST be handled by POST.
-            # The GET handler only serves the notification list.
-            if p.startswith('/api/customer/') and p.endswith('/notifications/read'):
-                session_cid=require_customer(self)
-                if not session_cid: return
-                try: cid=int(p.split('/')[3])
-                except Exception: return send_json(self,400,{'error':'Invalid customer id'})
-                if cid != session_cid: return send_json(self,403,{'error':'Customer access denied'})
-                if d.get('all') is True:
-                    cur=c.execute('UPDATE notifications SET is_read=1 WHERE customer_id=?',(cid,))
-                else:
-                    try: nid=int(d.get('id'))
-                    except Exception: return send_json(self,400,{'error':'Invalid notification id'})
-                    cur=c.execute('UPDATE notifications SET is_read=1 WHERE id=? AND customer_id=?',(nid,cid))
-                    if cur.rowcount == 0:
-                        return send_json(self,404,{'error':'Notification not found'})
-                c.commit()
-                return send_json(self,200,{'ok':True})
             if p=='/api/customer/check-phone':
                 phone=re.sub(r'\D','',str(d.get('phone','')))[-10:]
                 if len(phone)!=10: return send_json(self,400,{'error':'Valid 10-digit phone required'})

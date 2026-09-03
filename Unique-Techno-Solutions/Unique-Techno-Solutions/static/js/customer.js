@@ -92,6 +92,7 @@ async function verifyAuthOtp(){
     customer=d.customer;
     document.body.classList.add('customer-auth');
     await Promise.all([loadServices(),loadOffers(),loadHistory(),loadProfile(),loadNotifications()]);
+    renderFloatingNotifications();
     renderDashboard();window.history.replaceState({},'', '/customer/');show('home');updateAccountControl();
   }catch(e){alert(e.message)}
 }
@@ -107,6 +108,7 @@ async function completeSignup(){
     customer=d.customer;
     document.body.classList.add('customer-auth');
     await Promise.all([loadServices(),loadOffers(),loadHistory(),loadProfile(),loadNotifications()]);
+    renderFloatingNotifications();
     renderDashboard();window.history.replaceState({},'', '/customer/');show('home');updateAccountControl();toast('Account created successfully. Welcome to Unique Techno Solutions.');
   }catch(e){alert(e.message)}
 }
@@ -514,113 +516,10 @@ async function verifyProfileChangeOtp(){
   }catch(e){alert(e.message)}
 }
 
-async function saveProfile(){try{customer=await api('/api/customer/'+customer.id+'/profile',{method:'PUT',body:JSON.stringify({name:document.getElementById('pName').value})});renderProfile();toast('Personal details updated.')}catch(e){alert(e.message)}}
-function updateProfileCompletion(){
-  const fields=[customer?.name,customer?.phone,customer?.email,customer?.area,customer?.address];
-  const done=fields.filter(x=>String(x||'').trim()).length;
-  const pct=Math.round(done/fields.length*100);
-  const a=document.getElementById('profileCompletionPct'); if(a)a.textContent=pct+'%';
-  const b=document.getElementById('profileCompletionLabel'); if(b)b.textContent=pct+'%';
-  const bar=document.getElementById('profileCompletionBar'); if(bar)bar.style.width=pct+'%';
-  const t=document.getElementById('profileCompletionText'); if(t)t.textContent=pct===100?'Profile complete':'Complete your profile';
-  const sec=document.getElementById('profileSecurity');
-  if(sec)sec.innerHTML='<div class="security-row"><span>✓</span><div><b>Mobile verified</b><small>'+esc(customer?.phone||'Not available')+'</small></div></div><div class="security-row"><span>✓</span><div><b>Email '+(customer?.email?'available':'pending')+'</b><small>'+(customer?.email||'Add an email for account recovery')+'</small></div></div>';
-}
-function renderProfile(){const n=(customer.name||'C').split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase();document.getElementById('profileAvatar').textContent=n;document.getElementById('profileWelcome').textContent='Welcome, '+(customer.name||'Customer');document.getElementById('pName').value=customer.name||'';document.getElementById('pPhone').value=customer.phone||'';document.getElementById('pEmail').value=customer.email||'';updateAccountControl();updateProfileCompletion();loadAddresses();}
-function openAddressModal(id=null){const m=document.getElementById('addressModal'); if(!m)return; const r=(window.customerAddresses||[]).find(x=>Number(x.id)===Number(id)); document.getElementById('addressEditId').value=r?r.id:''; document.getElementById('addressModalTitle').textContent=r?'Edit Address':'Add Address'; document.getElementById('addressLabel').value=r?.label||''; document.getElementById('addressArea').value=r?.area||''; document.getElementById('addressPincode').value=r?.pincode||''; document.getElementById('addressFull').value=r?.address||''; document.getElementById('addressDefault').checked=!!r?.is_default; m.style.display='flex';m.setAttribute('aria-hidden','false');}
-function closeAddressModal(){const m=document.getElementById('addressModal');if(m){m.style.display='none';m.setAttribute('aria-hidden','true')}}
-async function loadAddresses(){if(!customer?.id)return;try{window.customerAddresses=await api('/api/customer/'+customer.id+'/addresses');renderAddresses()}catch(e){const b=document.getElementById('addressBookList');if(b)b.innerHTML='<div class="notification-empty">Could not load addresses.</div>'}}
-function renderAddresses(){const b=document.getElementById('addressBookList');if(!b)return;const rows=window.customerAddresses||[];if(!rows.length){b.innerHTML='<div class="address-empty">No saved addresses yet. Add your first service address.</div>';return}b.innerHTML=rows.map(r=>`<div class="address-card"><div class="address-card-top"><div><b>${esc(r.label||'Address')}</b>${r.is_default?'<span class="address-default">DEFAULT</span>':''}</div><div class="address-actions"><button type="button" onclick="openAddressModal(${r.id})">Edit</button><button type="button" onclick="deleteAddress(${r.id})">Delete</button></div></div><div class="address-meta">${esc(r.area||'')}${r.pincode?' • '+esc(r.pincode):''}</div><p>${esc(r.address||'')}</p></div>`).join('')}
-async function saveAddress(){try{const id=document.getElementById('addressEditId').value;const payload={label:document.getElementById('addressLabel').value.trim()||'Address',area:document.getElementById('addressArea').value.trim(),pincode:document.getElementById('addressPincode').value.trim(),address:document.getElementById('addressFull').value.trim(),is_default:document.getElementById('addressDefault').checked};if(!payload.address)throw Error('Full address is required.');if(payload.pincode&&!/^\d{6}$/.test(payload.pincode))throw Error('Enter a valid 6-digit pincode.');window.customerAddresses=await api(id?'/api/customer/'+customer.id+'/addresses/'+id:'/api/customer/'+customer.id+'/addresses',{method:id?'PUT':'POST',body:JSON.stringify(payload)});closeAddressModal();renderAddresses();toast('Address saved successfully.')}catch(e){alert(e.message)}}
-async function deleteAddress(id){if(!confirm('Delete this saved address?'))return;try{await api('/api/customer/'+customer.id+'/addresses/'+id,{method:'DELETE'});await loadAddresses();toast('Address deleted.')}catch(e){alert(e.message)}}
-async function loadNotifications(){if(!customer?.id)return;try{notifications=await api('/api/customer/'+customer.id+'/notifications');renderNotifications();updateNotificationBadges();updateFloatingNotificationPanel()}catch(e){document.getElementById('notificationList').innerHTML='<div class="notification-empty">No notifications.</div>'}}
-function renderNotifications(){
-  const box=document.getElementById('notificationList');
-  if(!box)return;
-  if(!notifications.length){box.innerHTML='<div class="notification-empty">No notifications.</div>';return}
-  box.innerHTML=notifications.map(n=>`<article class="notification ${n.is_read?'read':'unread'}" data-notification-id="${n.id}">
-    <button type="button" class="notification-main" aria-expanded="false">
-      <span class="notification-status-dot"></span>
-      <span class="notification-copy"><b>${esc(n.title)}</b><span>${esc(n.message)}</span><small>${esc(n.created_at||'')}</small></span>
-      <span class="notification-chevron">⌄</span>
-    </button>
-    <div class="notification-details" hidden>
-      <div class="notification-detail-message">${esc(n.message)}</div>
-      <div class="notification-detail-meta"><span>Received</span><b>${esc(n.created_at||'—')}</b></div>
-      <div class="notification-detail-meta"><span>Status</span><b class="notification-read-state">${n.is_read?'✓ Read':'● Unread'}</b></div>
-      <button type="button" class="notification-mark-read" data-mark-read="${n.id}" ${n.is_read?'disabled':''}>${n.is_read?'✓ Read':'✓ Mark as read'}</button>
-    </div>
-  </article>`).join('');
-  updateFloatingNotificationPanel();
-}
-async function markNotificationRead(id){
-  if(!customer?.id||!id)return false;
-  try{
-    await api('/api/customer/'+customer.id+'/notifications/read',{method:'POST',body:JSON.stringify({notification_id:id})});
-    const n=notifications.find(x=>Number(x.id)===Number(id));
-    if(n)n.is_read=1;
-    renderNotifications();
-    updateNotificationBadges();
-    if(typeof renderDashboard==='function')renderDashboard();
-    return true;
-  }catch(e){alert(e?.message||'Could not mark notification as read.');return false}
-}
-async function markAllNotificationsRead(){if(!customer?.id)return;try{await api('/api/customer/'+customer.id+'/notifications/read-all',{method:'POST',body:JSON.stringify({})});notifications.forEach(n=>n.is_read=1);renderNotifications();updateNotificationBadges();updateFloatingNotificationPanel();if(typeof renderDashboard==='function')renderDashboard();toast('All notifications marked as read.');}catch(e){alert(e?.message||'Could not mark notifications as read.')}}
-function updateFloatingNotificationPanel(){
-  const list=document.getElementById('floatingNotificationList');
-  if(!list)return;
-  const recent=notifications.slice(0,8);
-  list.innerHTML=recent.length?recent.map(n=>`<article class=\"floating-notification-item ${n.is_read?'read':'unread'}\" data-floating-notification=\"${n.id}\">
-    <button type=\"button\" class=\"floating-notification-summary\" aria-expanded=\"false\">
-      <span class=\"floating-notification-dot\"></span><span class=\"floating-notification-copy\"><b>${esc(n.title)}</b><small>${esc(n.message)}</small><em>${esc(n.created_at||'')}</em></span><span class=\"floating-notification-chevron\">⌄</span>
-    </button>
-    <div class=\"floating-notification-details\" hidden>
-      <p>${esc(n.message)}</p><div><span>Received</span><b>${esc(n.created_at||'—')}</b></div>
-      <div><span>Status</span><b class=\"floating-read-state\">${n.is_read?'✓ Read':'● Unread'}</b></div>
-      <button type=\"button\" class=\"floating-mark-read\" data-floating-mark-read=\"${n.id}\" ${n.is_read?'disabled':''}>${n.is_read?'✓ Read':'✓ Mark as read'}</button>
-    </div>
-  </article>`).join(''):'<div class=\"floating-notification-empty\">No notifications</div>';
-}
-function toggleFloatingNotifications(){
-  const p=document.getElementById('floatingNotificationPanel'); if(!p)return;
-  if(typeof closeAccountMenu==='function')closeAccountMenu();
-  p.classList.toggle('open');
-  p.setAttribute('aria-hidden',p.classList.contains('open')?'false':'true');
-}
-function closeFloatingNotifications(){const p=document.getElementById('floatingNotificationPanel');if(p){p.classList.remove('open');p.setAttribute('aria-hidden','true')}}
-function updateNotificationBadges(){const unread=notifications.filter(n=>!n.is_read).length;const count=document.getElementById('notifCount');if(count)count.textContent=unread||'';const side=document.getElementById('sideNotifCount');if(side){side.textContent=unread||'';side.classList.toggle('has',unread>0)}const fab=document.getElementById('floatingNotifCount');if(fab){fab.textContent=unread||'';fab.style.display=unread?'inline-flex':'none'}}
+async function saveProfile(){try{customer=await api('/api/customer/'+customer.id+'/profile',{method:'PUT',body:JSON.stringify({name:document.getElementById('pName').value,email:document.getElementById('pEmail').value,area:document.getElementById('pArea').value,address:document.getElementById('pAddress').value})});renderProfile();toast('Profile updated.')}catch(e){alert(e.message)}}
+async function loadNotifications(){if(!customer?.id)return;try{notifications=await api('/api/customer/'+customer.id+'/notifications');renderNotifications();document.getElementById('notifCount').textContent=notifications.filter(n=>!n.is_read).length||''}catch(e){document.getElementById('notificationList').innerHTML='<div class="notification-empty">No notifications.</div>'}}
+function renderNotifications(){const box=document.getElementById('notificationList');if(!notifications.length){box.innerHTML='<div class="notification-empty">No notifications.</div>';return}box.innerHTML=notifications.map(n=>`<div class="notification ${n.is_read?'':'unread'}"><b>${esc(n.title)}</b><span>${esc(n.message)}</span><span>${esc(n.created_at)}</span></div>`).join('')}
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',2200)}
-document.addEventListener('click',async function(e){
-  const main=e.target.closest('.notification-main');
-  if(main){
-    const card=main.closest('.notification');
-    if(!card)return;
-    const details=card.querySelector('.notification-details');
-    const open=card.classList.toggle('expanded');
-    main.setAttribute('aria-expanded',String(open));
-    if(details)details.hidden=!open;
-    card.parentElement?.querySelectorAll('.notification.expanded').forEach(x=>{if(x!==card){x.classList.remove('expanded');const m=x.querySelector('.notification-main');const d=x.querySelector('.notification-details');if(m)m.setAttribute('aria-expanded','false');if(d)d.hidden=true;}});
-    return;
-  }
-  const rb=e.target.closest('[data-mark-read]');
-  if(rb){e.preventDefault();e.stopPropagation();await markNotificationRead(Number(rb.dataset.markRead));return;}
-  const fmr=e.target.closest('[data-floating-mark-read]');
-  if(fmr){e.preventDefault();e.stopPropagation();await markNotificationRead(Number(fmr.dataset.floatingMarkRead));return;}
-  const fs=e.target.closest('.floating-notification-summary');
-  if(fs){
-    e.preventDefault();e.stopPropagation();
-    const card=fs.closest('.floating-notification-item'); if(!card)return;
-    const open=card.classList.toggle('expanded'); fs.setAttribute('aria-expanded',String(open));
-    const d=card.querySelector('.floating-notification-details'); if(d)d.hidden=!open;
-    card.parentElement?.querySelectorAll('.floating-notification-item.expanded').forEach(x=>{if(x!==card){x.classList.remove('expanded');const b=x.querySelector('.floating-notification-summary');const d2=x.querySelector('.floating-notification-details');if(b)b.setAttribute('aria-expanded','false');if(d2)d2.hidden=true;}});
-    return;
-  }
-  const f=e.target.closest('#floatingNotifBtn');
-  if(f){e.preventDefault();e.stopPropagation();toggleFloatingNotifications();return;}
-  const panel=document.getElementById('floatingNotificationPanel');
-  if(panel&&!panel.contains(e.target))closeFloatingNotifications();
-});
-
 async function initCustomerAuth(){try{const d=await api('/api/customer/session');if(d.customer){customer=d.customer;document.body.classList.add('customer-auth');await Promise.all([loadServices(),loadOffers(),loadHistory(),loadProfile(),loadNotifications()]);show('home');return}}catch(e){} document.body.classList.remove('customer-auth');show('login')}
 initCustomerAuth();
 
@@ -699,10 +598,109 @@ async function submitSupport(){
 const _loadNotificationsOriginal = loadNotifications;
 loadNotifications = async function(){
   await _loadNotificationsOriginal();
-  const count=document.getElementById('notifCount')?.textContent||'';
-  const side=document.getElementById('sideNotifCount');
-  if(side){side.textContent=count;side.classList.toggle('has',!!count)}
+  renderFloatingNotifications();
 };
+
+function renderFloatingNotifications(){
+  const box=document.getElementById('floatingNotificationList');
+  const badge=document.getElementById('floatingNotifCount');
+  if(!box||!badge)return;
+  const unread=notifications.filter(n=>Number(n.is_read)!==1).length;
+  badge.textContent=unread?String(unread):'';
+  badge.classList.toggle('has-count',unread>0);
+  if(!notifications.length){box.innerHTML='<div class="floating-notification-empty">No notifications yet.</div>';return;}
+  box.innerHTML=notifications.slice(0,50).map(n=>{
+    const id=Number(n.id);
+    const open=Number(window.__openNotificationId)===id;
+    const unreadClass=Number(n.is_read)!==1?' unread':'';
+    return `<div class="floating-notification-item${unreadClass}${open?' expanded':''}" data-id="${id}">
+      <div class="floating-notification-row" role="button" tabindex="0" onclick="toggleCustomerNotification(${id},event)" onkeydown="if(event.key==='Enter'||event.key===' ')toggleCustomerNotification(${id},event)">
+        <span class="floating-notification-dot"></span>
+        <span class="floating-notification-copy"><b>${esc(n.title)}</b><span>${esc(n.message)}</span><small>${esc(n.created_at||'')}</small></span>
+        <span class="floating-notification-chevron">${open?'⌃':'⌄'}</span>
+      </div>
+      ${open?`<div class="floating-notification-details">
+        <div class="floating-notification-full">${esc(n.message||'No additional details available.')}</div>
+        <div class="floating-notification-meta"><span class="${Number(n.is_read)!==1?'status-unread':'status-read'}">${Number(n.is_read)!==1?'● Unread':'✓ Read'}</span><span>${esc(n.created_at||'')}</span></div>
+        <div class="floating-notification-actions">
+          ${Number(n.is_read)!==1?`<button type="button" class="floating-notification-markread" onclick="markCustomerNotificationRead(${id},event)">✓ Mark as read</button>`:'<span class="floating-notification-read-label">✓ Already read</span>'}
+          ${n.booking_id?`<button type="button" class="floating-notification-view" onclick="viewCustomerNotificationBooking(${id},${JSON.stringify(String(n.booking_id))},event)">View Booking →</button>`:''}
+        </div>
+      </div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function toggleFloatingNotifications(event){
+  event?.stopPropagation();
+  if(!customer?.id)return;
+  const p=document.getElementById('floatingNotificationPanel');
+  if(!p)return;
+  if(typeof closeAccountMenu==='function')closeAccountMenu();
+  const open=p.classList.toggle('open');
+  p.setAttribute('aria-hidden',open?'false':'true');
+  if(open){window.__openNotificationId=null;loadNotifications();}
+}
+function closeFloatingNotifications(){
+  const p=document.getElementById('floatingNotificationPanel');
+  if(p){p.classList.remove('open');p.setAttribute('aria-hidden','true');}
+  window.__openNotificationId=null;
+}
+
+async function markCustomerNotificationRead(id,event){
+  event?.stopPropagation();
+  if(!customer?.id)return false;
+  try{
+    const r=await api('/api/customer/'+customer.id+'/notifications/read',{method:'POST',body:JSON.stringify({id:Number(id)})});
+    if(!r?.ok)throw Error('Read update failed');
+    const n=notifications.find(x=>Number(x.id)===Number(id));
+    if(n)n.is_read=1;
+    renderFloatingNotifications();
+    return true;
+  }catch(e){
+    alert('Could not mark notification as read. Please try again.');
+    return false;
+  }
+}
+
+async function markAllNotificationsRead(event){
+  event?.stopPropagation();
+  if(!customer?.id)return;
+  try{
+    const r=await api('/api/customer/'+customer.id+'/notifications/read',{method:'POST',body:JSON.stringify({all:true})});
+    if(!r?.ok)throw Error('Read update failed');
+    notifications.forEach(n=>n.is_read=1);
+    window.__openNotificationId=null;
+    renderFloatingNotifications();
+    toast('All notifications marked as read.');
+  }catch(e){alert('Could not mark all notifications as read. Please try again.');}
+}
+
+function toggleCustomerNotification(id,event){
+  event?.stopPropagation();
+  const nid=Number(id);
+  window.__openNotificationId=Number(window.__openNotificationId)===nid?null:nid;
+  renderFloatingNotifications();
+}
+
+async function viewCustomerNotificationBooking(id,bookingId,event){
+  event?.stopPropagation();
+  await markCustomerNotificationRead(id,event);
+  closeFloatingNotifications();
+  const row=historyRows.find(x=>String(x.id)===String(bookingId));
+  if(row){bookingCode=row.booking_code;show('track');await refreshTracking();}
+}
+
+async function openCustomerNotification(id,bookingId){toggleCustomerNotification(id);}
+
+(function initFloatingNotifications(){
+  document.addEventListener('click',e=>{
+    const root=document.getElementById('notificationFab');
+    if(root&&!root.contains(e.target))closeFloatingNotifications();
+  });
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeFloatingNotifications()});
+  setInterval(()=>{if(customer&&document.visibilityState==='visible')loadNotifications().catch(()=>{});},10000);
+})();
 
 async function logoutCustomer(){try{await api('/api/customer/logout',{method:'POST'});}catch(e){} customer=null;historyRows=[];notifications=[];document.body.classList.remove('customer-auth');document.getElementById('otpStep').classList.remove('on');document.getElementById('phoneStep').style.display='block';document.getElementById('otp').value='';show('login');window.history.replaceState({},'', '/customer/login');}
 
