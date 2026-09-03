@@ -1549,3 +1549,23 @@ body.booking-modal-open{overflow:hidden}
 
 /* Completed-service invoice action */
 .invoice-btn{font-size:12px;display:inline-flex;align-items:center;gap:5px}.ut-invoice-action{display:flex;align-items:center;gap:12px;margin-top:12px;padding:11px 13px;border:1px solid #d8e5f2;background:#f7fbff;border-radius:11px}.ut-invoice-action span{font-size:10px;color:#66788a}.ut-track-action-btn.invoice{background:#0b6fe4;color:#fff;border:0;box-shadow:0 6px 16px rgba(11,111,228,.18)}
+
+
+/* Customer Login / Sign Up authentication */
+.auth-panel-left{padding-top:5vw;padding-bottom:5vw}
+.auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:5px;background:#f1f5f9;border:1px solid #e1e7ed;border-radius:12px;margin:24px 0 16px;max-width:520px}
+.auth-tab{border:0;background:transparent;color:#667382;border-radius:9px;padding:11px 14px;font-weight:900;cursor:pointer;font-size:12px}
+.auth-tab.active{background:#fff;color:#11151d;box-shadow:0 2px 8px rgba(18,38,58,.08)}
+.auth-form{max-width:520px}
+.auth-label{display:block;font-size:9px;letter-spacing:1.2px;font-weight:900;color:#6d7885;margin:0 0 6px}
+.auth-label span{font-weight:700;color:#9aa4af}
+.auth-field{margin-top:10px}
+.auth-field input{width:100%}
+.auth-switch-link,.auth-back-link{border:0;background:none;padding:10px 0 0;color:#788390;font-size:10px;cursor:pointer}
+.auth-switch-link b,.auth-back-link{color:#0a72e8;font-weight:900}
+.auth-otp-step{display:none;max-width:520px}
+.auth-otp-step.on{display:block}
+.auth-otp-message{font-size:11px!important;margin:8px 0 12px!important;color:#737c86!important}
+.auth-otp-step .auth-demo-note{font-size:10px!important;margin-top:12px!important}
+@media(max-width:850px){.auth-login-layout{grid-template-columns:1fr}.auth-login-layout .login-right{display:none}.auth-panel-left{padding:42px 7vw}.auth-panel-left .login-left .brand{margin-bottom:30px}}
+@media(max-width:520px){.auth-panel-left{padding:32px 20px}.auth-panel-left .brand{margin-bottom:30px}.auth-tabs{margin-top:20px}.login h1{font-size:42px}.phone select{width:68px}}
