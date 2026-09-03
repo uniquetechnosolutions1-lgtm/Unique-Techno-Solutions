@@ -1569,3 +1569,130 @@ body.booking-modal-open{overflow:hidden}
 .auth-otp-step .auth-demo-note{font-size:10px!important;margin-top:12px!important}
 @media(max-width:850px){.auth-login-layout{grid-template-columns:1fr}.auth-login-layout .login-right{display:none}.auth-panel-left{padding:42px 7vw}.auth-panel-left .login-left .brand{margin-bottom:30px}}
 @media(max-width:520px){.auth-panel-left{padding:32px 20px}.auth-panel-left .brand{margin-bottom:30px}.auth-tabs{margin-top:20px}.login h1{font-size:42px}.phone select{width:68px}}
+
+/* =========================================================
+   UNIQUE TECHNO — UBER-INSPIRED BLACK / WHITE HOME V4
+   Mobile-first. Final overrides intentionally neutralize the
+   previous blue/corporate dashboard treatment.
+   ========================================================= */
+:root{
+  --ut-black:#000000;
+  --ut-white:#ffffff;
+  --ut-bg:#f6f6f6;
+  --ut-gray:#6f6f6f;
+  --ut-line:#e5e5e5;
+}
+html,body{background:var(--ut-bg)!important;color:#111!important}
+body{overflow-x:hidden!important}
+#appSidebar{display:none!important}
+#home .nav,#servicesPage .nav,#history .nav,#payments .nav,#profile .nav,#notifications .nav,#help .nav{background:#fff!important;border-bottom:1px solid #e7e7e7!important;box-shadow:none!important;backdrop-filter:none!important}
+.navin{width:100%!important;max-width:none!important;padding:0 20px!important}
+.brand .mark{background:#000!important;color:#fff!important;box-shadow:none!important;border-radius:9px!important}
+.navlinks button{background:#fff!important;border:0!important;color:#111!important;box-shadow:none!important}
+.navlinks button:hover{transform:none!important;box-shadow:none!important}
+
+/* Full phone width — no narrow desktop canvas inside the device emulator */
+#home .dashboard-wrap{width:100%!important;max-width:none!important;margin:0!important;padding:0 16px 92px!important}
+#home .dashboard-wrap:before{display:none!important}
+#home .dashboard-hero{
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:0 0 24px 24px!important;
+  min-height:330px!important;
+  display:block!important;
+  background:#000!important;
+  box-shadow:none!important;
+}
+#home .dashboard-hero:before,#home .dashboard-hero:after{display:none!important}
+#home .dashboard-hero-copy{
+  min-height:330px!important;
+  padding:34px 22px 28px!important;
+  color:#fff!important;
+  background:#000!important;
+}
+#home .dashboard-hero-copy:after{display:none!important}
+#home .dashboard-hero .hero-badge{
+  display:inline-flex!important;
+  background:#1d1d1d!important;
+  border:1px solid #333!important;
+  color:#fff!important;
+  border-radius:999px!important;
+}
+#home .dashboard-hero .hero-badge span{background:#fff!important}
+#home .dashboard-hero .eyebrow{color:#aaa!important}
+#home .dashboard-hero h1{
+  color:#fff!important;
+  font-size:48px!important;
+  line-height:.96!important;
+  letter-spacing:-3px!important;
+  max-width:330px!important;
+}
+#home .dashboard-hero p{color:#bdbdbd!important;font-size:13px!important;max-width:330px!important}
+#home .dash-actions{margin-top:25px!important}
+#home .hero-primary{background:#fff!important;color:#000!important;border:0!important;border-radius:999px!important;padding:14px 18px!important}
+#home .hero-primary b{color:#000!important}
+#home .hero-link{color:#fff!important}
+#home .hero-trust{border-top:1px solid #2c2c2c!important;margin-top:24px!important;padding-top:14px!important}
+#home .hero-trust span{color:#aaa!important}
+
+/* Offers directly below hero, black/white */
+#home .offers-panel,#home .offers-top{
+  margin:14px 0 0!important;
+  border:1px solid #ddd!important;
+  border-radius:20px!important;
+  background:#fff!important;
+  color:#111!important;
+  box-shadow:none!important;
+}
+#home .offers-panel:before,#home .offers-panel:after{display:none!important}
+#home .offers-head h3,#home .offers-topline h3{color:#111!important}
+#home .offers-head p,#home .offers-topline p{color:#777!important}
+#home .offers-panel .eyebrow{color:#666!important}
+#home .offer-live{background:#f0f0f0!important;color:#111!important;border-color:#ddd!important}
+#home .unique-offer-card,#home .offer-card{background:#f7f7f7!important;border:1px solid #e1e1e1!important;box-shadow:none!important;color:#111!important}
+#home .unique-offer-card h4,#home .offer-card h4{color:#111!important}
+#home .unique-offer-card p,#home .offer-card p{color:#666!important}
+#home .offer-bottom b,#home .offer-bottom span{color:#111!important}
+#home .offer-bottom button{background:#000!important;color:#fff!important}
+#home .offer-icon{background:#111!important;color:#fff!important;border:0!important}
+
+/* Stats: monochrome cards */
+#home .stats-row{grid-template-columns:repeat(2,1fr)!important;gap:10px!important;margin:14px 0!important}
+#home .stat-card{background:#fff!important;border:1px solid #e2e2e2!important;border-radius:18px!important;box-shadow:none!important;padding:15px!important}
+#home .stat-card small{color:#777!important}
+#home .stat-card b{color:#111!important}
+#home .stat-icon,#home .stat-icon.blue,#home .stat-icon.green,#home .stat-icon.orange,#home .stat-icon.purple{background:#f0f0f0!important;color:#111!important}
+
+/* Dashboard cards */
+#home .dashboard-grid{display:block!important}
+#home .dashboard-main,#home .dashboard-right{display:grid!important;grid-template-columns:1fr!important;gap:12px!important}
+#home .dash-panel{background:#fff!important;border:1px solid #e2e2e2!important;border-radius:18px!important;box-shadow:none!important}
+#home .panel-heading h3,#home .dash-empty-copy h2,#home .current-title{color:#111!important}
+#home .text-link,.mini-btn{color:#111!important}
+#home .mini-btn.primary{background:#000!important;color:#fff!important;border-color:#000!important}
+#home .support-banner{background:#000!important;color:#fff!important;box-shadow:none!important}
+#home .support-banner p{color:#aaa!important}
+#home .support-banner button{background:#fff!important;color:#000!important}
+#home .trust-strip{background:#fff!important;border:1px solid #e2e2e2!important;border-radius:18px!important}
+#home .trust-strip div{color:#111!important}
+#home .trust-strip small{color:#777!important}
+
+/* Mobile header: remove the cramped desktop button row */
+@media(max-width:760px){
+  #home .navin,#servicesPage .navin{padding:0 14px!important}
+  #home .navlinks button,#servicesPage .navlinks button{display:none!important}
+  #home .navlinks,#servicesPage .navlinks{display:flex!important;gap:8px!important}
+  #home .navlinks button:nth-last-child(2),#home .navlinks button:last-child{display:block!important;font-size:0!important;width:40px!important;height:40px!important;padding:0!important;border-radius:50%!important;background:#f1f1f1!important}
+  #home .navlinks button:nth-last-child(2)::first-letter{font-size:16px!important}
+  #home .dashboard-wrap{padding-left:0!important;padding-right:0!important}
+  #home .stats-row,#home .dashboard-main,#home .dashboard-right,#home .trust-strip{margin-left:16px!important;margin-right:16px!important}
+  #home .offers-panel,#home .offers-top{margin-left:16px!important;margin-right:16px!important}
+  #home .dashboard-hero-copy{padding-left:22px!important;padding-right:22px!important}
+}
+@media(max-width:430px){
+  #home .dashboard-hero h1{font-size:44px!important}
+  #home .dashboard-hero-copy{min-height:315px!important}
+  #home .dashboard-hero{min-height:315px!important}
+}
