@@ -569,8 +569,17 @@ async function markAllNotificationsRead(){if(!customer?.id)return;try{await api(
 function updateFloatingNotificationPanel(){
   const list=document.getElementById('floatingNotificationList');
   if(!list)return;
-  const recent=notifications.slice(0,6);
-  list.innerHTML=recent.length?recent.map(n=>`<button type=\"button\" class=\"floating-notification-item ${n.is_read?'read':'unread'}\" data-floating-notification=\"${n.id}\"><span class=\"floating-notification-dot\"></span><span><b>${esc(n.title)}</b><small>${esc(n.message)}</small></span></button>`).join(''):'<div class=\"floating-notification-empty\">No new notifications</div>';
+  const recent=notifications.slice(0,8);
+  list.innerHTML=recent.length?recent.map(n=>`<article class=\"floating-notification-item ${n.is_read?'read':'unread'}\" data-floating-notification=\"${n.id}\">
+    <button type=\"button\" class=\"floating-notification-summary\" aria-expanded=\"false\">
+      <span class=\"floating-notification-dot\"></span><span class=\"floating-notification-copy\"><b>${esc(n.title)}</b><small>${esc(n.message)}</small><em>${esc(n.created_at||'')}</em></span><span class=\"floating-notification-chevron\">⌄</span>
+    </button>
+    <div class=\"floating-notification-details\" hidden>
+      <p>${esc(n.message)}</p><div><span>Received</span><b>${esc(n.created_at||'—')}</b></div>
+      <div><span>Status</span><b class=\"floating-read-state\">${n.is_read?'✓ Read':'● Unread'}</b></div>
+      <button type=\"button\" class=\"floating-mark-read\" data-floating-mark-read=\"${n.id}\" ${n.is_read?'disabled':''}>${n.is_read?'✓ Read':'✓ Mark as read'}</button>
+    </div>
+  </article>`).join(''):'<div class=\"floating-notification-empty\">No notifications</div>';
 }
 function toggleFloatingNotifications(){
   const p=document.getElementById('floatingNotificationPanel'); if(!p)return;
@@ -595,8 +604,17 @@ document.addEventListener('click',async function(e){
   }
   const rb=e.target.closest('[data-mark-read]');
   if(rb){e.preventDefault();e.stopPropagation();await markNotificationRead(Number(rb.dataset.markRead));return;}
-  const fb=e.target.closest('[data-floating-notification]');
-  if(fb){const id=Number(fb.dataset.floatingNotification);await markNotificationRead(id);closeFloatingNotifications();show('notifications');loadNotifications();return;}
+  const fmr=e.target.closest('[data-floating-mark-read]');
+  if(fmr){e.preventDefault();e.stopPropagation();await markNotificationRead(Number(fmr.dataset.floatingMarkRead));return;}
+  const fs=e.target.closest('.floating-notification-summary');
+  if(fs){
+    e.preventDefault();e.stopPropagation();
+    const card=fs.closest('.floating-notification-item'); if(!card)return;
+    const open=card.classList.toggle('expanded'); fs.setAttribute('aria-expanded',String(open));
+    const d=card.querySelector('.floating-notification-details'); if(d)d.hidden=!open;
+    card.parentElement?.querySelectorAll('.floating-notification-item.expanded').forEach(x=>{if(x!==card){x.classList.remove('expanded');const b=x.querySelector('.floating-notification-summary');const d2=x.querySelector('.floating-notification-details');if(b)b.setAttribute('aria-expanded','false');if(d2)d2.hidden=true;}});
+    return;
+  }
   const f=e.target.closest('#floatingNotifBtn');
   if(f){e.preventDefault();e.stopPropagation();toggleFloatingNotifications();return;}
   const panel=document.getElementById('floatingNotificationPanel');
