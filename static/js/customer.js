@@ -435,29 +435,25 @@ let profileChangeResendTimer=null;
 let profileChangeResendSeconds=0;
 function startProfileChangeResendCountdown(){
   clearInterval(profileChangeResendTimer);
-  const btn=document.getElementById('profileChangeResendBtn');
-  const timer=document.getElementById('profileChangeResendTimer');
+  const btn=document.getElementById('profileChangeSendBtn');
   profileChangeResendSeconds=60;
-  if(btn){btn.disabled=true;btn.innerHTML='Resend OTP in <span id=\"profileChangeResendTimer\">60</span>s';}
+  if(btn){btn.disabled=true;btn.textContent='Re-send OTP in 60s';}
   profileChangeResendTimer=setInterval(()=>{
     profileChangeResendSeconds--;
-    const t=document.getElementById('profileChangeResendTimer');
-    if(t)t.textContent=profileChangeResendSeconds;
-    if(profileChangeResendSeconds<=0){
+    const b=document.getElementById('profileChangeSendBtn');
+    if(profileChangeResendSeconds>0){
+      if(b){b.disabled=true;b.textContent='Re-send OTP in '+profileChangeResendSeconds+'s';}
+    }else{
       clearInterval(profileChangeResendTimer); profileChangeResendTimer=null;
-      const b=document.getElementById('profileChangeResendBtn');
-      if(b){b.disabled=false;b.textContent='Resend OTP →';}
+      if(b){b.disabled=false;b.textContent='Re-send OTP →';}
     }
   },1000);
 }
 function resetProfileChangeResend(){
   clearInterval(profileChangeResendTimer); profileChangeResendTimer=null;
-  const b=document.getElementById('profileChangeResendBtn');
-  if(b){b.disabled=true;b.innerHTML='Resend OTP in <span id=\"profileChangeResendTimer\">60</span>s';}
-}
-async function resendProfileChangeOtp(){
-  if(profileChangeResendSeconds>0)return;
-  await sendProfileChangeOtp(true);
+  profileChangeResendSeconds=0;
+  const b=document.getElementById('profileChangeSendBtn');
+  if(b){b.disabled=false;b.textContent='Send OTP to Mobile →';}
 }
 
 function openProfileChange(mode){
@@ -478,8 +474,6 @@ function openProfileChange(mode){
   otpBox.style.display='none';
   sendBtn.disabled=false;
   sendBtn.textContent='Send OTP to Mobile →';
-  const resendBtn=document.getElementById('profileChangeResendBtn');
-  if(resendBtn){resendBtn.style.display='none';resendBtn.disabled=true;resendBtn.innerHTML='Resend OTP in <span id=\"profileChangeResendTimer\">60</span>s';}
   clearInterval(profileChangeResendTimer); profileChangeResendTimer=null; profileChangeResendSeconds=0;
   document.getElementById('profileChangeOtp').value='';
   const m=document.getElementById('profileChangeModal'); m.style.display='flex'; m.setAttribute('aria-hidden','false');
@@ -487,23 +481,21 @@ function openProfileChange(mode){
 }
 
 function closeProfileChange(){
-  clearInterval(profileChangeResendTimer); profileChangeResendTimer=null;
+  clearInterval(profileChangeResendTimer); profileChangeResendTimer=null; profileChangeResendSeconds=0;
   const m=document.getElementById('profileChangeModal'); if(m){m.style.display='none';m.setAttribute('aria-hidden','true');}
 }
 
-async function sendProfileChangeOtp(isResend=false){
+async function sendProfileChangeOtp(){
   try{
+    if(profileChangeResendSeconds>0)return;
     if(!customer?.id)throw Error('Please login again.');
     const value=document.getElementById('profileChangeValue').value.trim();
     if(profileChangeMode==='email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) throw Error('Enter a valid email address.');
     if(profileChangeMode==='mobile' && !/^\d{10}$/.test(value.replace(/\D/g,''))) throw Error('Enter a valid 10-digit mobile number.');
     const d=await api('/api/customer/'+customer.id+'/profile-change-otp',{method:'POST',body:JSON.stringify({type:profileChangeMode,value})});
     document.getElementById('profileChangeOtpBox').style.display='block';
-    document.getElementById('profileChangeSendBtn').textContent='OTP Sent ✓';
-    document.getElementById('profileChangeSendBtn').disabled=true;
-    document.getElementById('profileChangeResendBtn').style.display='block';
-    startProfileChangeResendCountdown();
     document.getElementById('profileChangeInfo').textContent='OTP has been sent to your registered mobile number '+(customer.phone||'')+'.';
+    startProfileChangeResendCountdown();
     toast(d.message||'OTP sent to your mobile number.');
     setTimeout(()=>document.getElementById('profileChangeOtp')?.focus(),80);
   }catch(e){alert(e.message)}
