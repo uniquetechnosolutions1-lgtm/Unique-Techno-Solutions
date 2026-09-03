@@ -241,22 +241,6 @@
 }
 </style>
 
-<style id="notification-fab-styles">
-.notif-fab{position:fixed;top:14px;right:82px;z-index:10060;display:none}
-body.customer-auth .notif-fab{display:block!important}
-.notif-fab-btn{width:44px;height:44px;border-radius:12px;border:1px solid #dbe5ef;background:#fff;box-shadow:0 4px 14px rgba(9,35,65,.12);cursor:pointer;display:grid;place-items:center;position:relative;font-size:20px;color:#15304f}
-.notif-badge{position:absolute;top:-5px;right:-5px;min-width:19px;height:19px;padding:0 5px;border-radius:10px;background:#e53935;color:#fff;border:2px solid #fff;font:800 10px/15px Arial;text-align:center;display:none}
-.notif-panel{position:fixed;top:68px;right:18px;width:min(390px,calc(100vw - 28px));max-height:min(620px,calc(100vh - 90px));background:#fff;border:1px solid #dce6ef;border-radius:18px;box-shadow:0 22px 55px rgba(6,28,52,.22);z-index:10070;display:none;overflow:hidden}
-.notif-panel.open{display:flex;flex-direction:column;animation:notifDrop .16s ease-out}
-@keyframes notifDrop{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:translateY(0)}}
-.notif-panel-head{padding:15px 16px 12px;border-bottom:1px solid #edf1f5;display:flex;align-items:center;justify-content:space-between;gap:10px}
-.notif-panel-head b{font-size:15px;color:#102744}.notif-panel-head small{display:block;color:#7a8a9e;font-size:10px;margin-top:3px}
-.notif-panel-actions{display:flex;gap:6px}.notif-panel-actions button{border:0;background:#f3f7fb;color:#0d6fe8;border-radius:8px;padding:7px 9px;font-size:10px;font-weight:700;cursor:pointer}
-.notif-panel-list{overflow:auto;padding:8px}.notif-item{padding:12px;border:1px solid #edf1f5;border-radius:12px;margin-bottom:7px;background:#fff;cursor:pointer}.notif-item.unread{background:#f5f9ff;border-color:#d9e9fb}
-.notif-item b{display:block;color:#17304e;font-size:12px}.notif-item span{display:block;color:#64748b;font-size:11px;line-height:1.45;margin-top:4px}.notif-item time{display:block;color:#9aa7b6;font-size:9px;margin-top:6px}
-.notif-empty{padding:34px 15px;text-align:center;color:#7a8a9e;font-size:12px}
-@media(max-width:760px){.notif-fab{top:10px;right:64px}.notif-fab-btn{width:42px;height:42px}.notif-panel{top:60px;right:10px}}
-</style>
 <style id="account-fab-styles">
 .account-fab{position:fixed;top:13px;right:28px;z-index:10050;display:none;font-family:inherit}
 body.customer-auth .account-fab{display:block}
@@ -375,6 +359,7 @@ body.customer-auth #home.screen.on ~ #accountFab{display:block!important}
   </nav>
   <div class="side-divider"></div>
   <nav class="side-nav secondary">
+    <button data-page="notifications" data-nav="notifications" onclick="show('notifications');loadNotifications()"><span>♢</span> Notifications <i id="sideNotifCount"></i></button>
     <button data-page="help" data-nav="help" onclick="show('help');loadSupport()"><span>?</span> Support / Complaint</button>
     <button data-page="login" onclick="logoutCustomer()"><span>↪</span> Logout</button>
   </nav>
@@ -382,7 +367,7 @@ body.customer-auth #home.screen.on ~ #accountFab{display:block!important}
   <div class="side-footer">© 2026 Unique Techno Solutions</div>
 </aside>
 <section id="home" class="screen">
-  <div class="nav"><div class="navin"><div class="brand"><span class="mark">U</span><span>Unique Techno</span></div><div class="navlinks"><button onclick="show('home')">Home</button><button onclick="show('servicesPage');renderServices()">Services</button><button onclick="show('history');loadHistory()">My Bookings</button><button onclick="show('track');openLatestActive()">Track Service</button><button onclick="show('payments');loadHistory();renderPayments()">Payments</button><button onclick="show('profile');loadProfile()">My Account</button><button onclick="show('help');loadSupport()">Support</button></div></div></div>
+  <div class="nav"><div class="navin"><div class="brand"><span class="mark">U</span><span>Unique Techno</span></div><div class="navlinks"><button onclick="show('home')">Home</button><button onclick="show('servicesPage');renderServices()">Services</button><button onclick="show('history');loadHistory()">My Bookings</button><button onclick="show('track');openLatestActive()">Track Service</button><button onclick="show('payments');loadHistory();renderPayments()">Payments</button><button onclick="show('notifications');loadNotifications()">🔔 <span id="notifCount"></span></button><button onclick="show('profile');loadProfile()">My Account</button><button onclick="show('help');loadSupport()">Support</button></div></div></div>
   <div class="wrap dashboard-wrap">
     <div class="dashboard-hero">
       <div class="dashboard-hero-copy">
@@ -431,7 +416,7 @@ body.customer-auth #home.screen.on ~ #accountFab{display:block!important}
     <section class="trust-strip"><div>✓ <b>Verified Engineers</b><small>Skilled professionals</small></div><div>✓ <b>Transparent Pricing</b><small>No hidden charges</small></div><div>✓ <b>Quality Service</b><small>Service-focused support</small></div><div>✓ <b>On-time Response</b><small>We value your time</small></div></section>
   </div>
 </section>
-<section id="servicesPage" class="screen"><div class="nav"><div class="navin"><div class="brand"><span class="mark">U</span><span>Unique Techno</span></div><div class="navlinks"><button onclick="show('home')">Home</button><button onclick="show('servicesPage');renderServices()">Services</button><button onclick="show('history');loadHistory()">My Bookings</button><button onclick="show('track');openLatestActive()">Track Service</button><button onclick="show('payments');loadHistory();renderPayments()">Payments</button><button onclick="show('profile');loadProfile()">My Account</button><button onclick="show('help');loadSupport()">Support</button></div></div></div><div class="wrap"><div class="hero"><div class="eyebrow">SERVICES</div><h1>Choose a service.</h1><p>Transparent starting prices. Final parts/material charges are confirmed after inspection.</p><div class="search"><span class="search-icon" aria-hidden="true">⌕</span><input id="serviceSearch" placeholder="Search services by name or category..." autocomplete="off" oninput="filterServices(this.value)"></div><div class="service-filters" role="tablist" aria-label="Service categories"><button class="service-filter active" data-cat="all" onclick="setServiceCategory('all',this)">All Services</button><button class="service-filter" data-cat="cctv" onclick="setServiceCategory('cctv',this)">CCTV & Security</button><button class="service-filter" data-cat="network" onclick="setServiceCategory('network',this)">Networking</button><button class="service-filter" data-cat="it" onclick="setServiceCategory('it',this)">IT & Devices</button><button class="service-filter" data-cat="infra" onclick="setServiceCategory('infra',this)">Server & Infrastructure</button><button class="service-filter" data-cat="automation" onclick="setServiceCategory('automation',this)">Automation</button></div></div><div id="services" class="services"></div></div></section>
+<section id="servicesPage" class="screen"><div class="nav"><div class="navin"><div class="brand"><span class="mark">U</span><span>Unique Techno</span></div><div class="navlinks"><button onclick="show('home')">Home</button><button onclick="show('servicesPage');renderServices()">Services</button><button onclick="show('history');loadHistory()">My Bookings</button><button onclick="show('track');openLatestActive()">Track Service</button><button onclick="show('payments');loadHistory();renderPayments()">Payments</button><button onclick="show('notifications');loadNotifications()">🔔 <span id="notifCount"></span></button><button onclick="show('profile');loadProfile()">My Account</button><button onclick="show('help');loadSupport()">Support</button></div></div></div><div class="wrap"><div class="hero"><div class="eyebrow">SERVICES</div><h1>Choose a service.</h1><p>Transparent starting prices. Final parts/material charges are confirmed after inspection.</p><div class="search"><span class="search-icon" aria-hidden="true">⌕</span><input id="serviceSearch" placeholder="Search services by name or category..." autocomplete="off" oninput="filterServices(this.value)"></div><div class="service-filters" role="tablist" aria-label="Service categories"><button class="service-filter active" data-cat="all" onclick="setServiceCategory('all',this)">All Services</button><button class="service-filter" data-cat="cctv" onclick="setServiceCategory('cctv',this)">CCTV & Security</button><button class="service-filter" data-cat="network" onclick="setServiceCategory('network',this)">Networking</button><button class="service-filter" data-cat="it" onclick="setServiceCategory('it',this)">IT & Devices</button><button class="service-filter" data-cat="infra" onclick="setServiceCategory('infra',this)">Server & Infrastructure</button><button class="service-filter" data-cat="automation" onclick="setServiceCategory('automation',this)">Automation</button></div></div><div id="services" class="services"></div></div></section>
 <section id="details" class="screen"><div class="wrap detail"><button class="back" onclick="show('servicesPage');renderServices()">← Services</button><div class="detail-grid"><div class="visual" id="dIcon"></div><div class="detail-copy"><div class="eyebrow">SERVICE DETAILS</div><h1 id="dName"></h1><p id="dDesc"></p><div class="bigprice" id="dPrice"></div><div class="includes"><b>What's included</b><div>✓ Professional engineer visit</div><div>✓ Initial diagnosis & assessment</div><div>✓ Installation / configuration as applicable</div><div>✓ Testing after service</div></div><button class="btn dark" style="width:100%;margin-top:20px" onclick="openBooking()">Book this service →</button></div></div></div></section>
 <section id="booking" class="screen"><div class="wrap booking booking-premium">
   <button class="back booking-back" onclick="show('details')">← Service details</button>
@@ -1003,16 +988,7 @@ if(!window._utTrackLoadHistory){
   </div>
 </div>
 
-<div id="profileChangeModal" class="ut-modal" aria-hidden="true" style="display:none"><div class="ut-modal-card"><button class="ut-modal-close" type="button" onclick="closeProfileChange()">×</button><div class="eyebrow">SECURITY VERIFICATION</div><h3 id="profileChangeTitle">Change contact</h3><p id="profileChangeInfo" style="font-size:11px;color:#68788e">An OTP will be sent to your registered mobile number.</p><label id="profileChangeValueLabel">New value</label><input id="profileChangeValue"><div id="profileChangeOtpBox" style="display:none"><label>OTP</label><input id="profileChangeOtp" maxlength="6" inputmode="numeric" placeholder="123456"><p style="font-size:10px;color:#777">OTP sent to your registered mobile. Prototype OTP: <b>123456</b></p></div><button id="profileChangeSendBtn" class="btn dark" type="button" onclick="sendProfileChangeOtp()">Send OTP to Mobile</button><button id="profileChangeVerifyBtn" class="btn dark" type="button" style="display:none;margin-top:8px" onclick="verifyProfileChangeOtp()">Verify & Update</button></div></div><!-- Common floating Notifications control -->
-<div id="notifFab" class="notif-fab" aria-label="Notifications">
-<button id="notifFabBtn" class="notif-fab-btn" type="button" title="Notifications" onclick="toggleNotificationPanel(event)">🔔<span id="notifFabBadge" class="notif-badge"></span></button>
-<div id="notifPanel" class="notif-panel" aria-hidden="true">
-<div class="notif-panel-head"><div><b>Notifications</b><small id="notifPanelSub">Latest updates</small></div>
-<div class="notif-panel-actions"><button type="button" onclick="markAllNotificationsRead()">Mark all read</button><button type="button" onclick="closeNotificationPanel()">×</button></div></div>
-<div id="notifPanelList" class="notif-panel-list"><div class="notif-empty">No notifications.</div></div>
-</div></div>
-
-<!-- Common My Account floating control -->
+<div id="profileChangeModal" class="ut-modal" aria-hidden="true" style="display:none"><div class="ut-modal-card"><button class="ut-modal-close" type="button" onclick="closeProfileChange()">×</button><div class="eyebrow">SECURITY VERIFICATION</div><h3 id="profileChangeTitle">Change contact</h3><p id="profileChangeInfo" style="font-size:11px;color:#68788e">An OTP will be sent to your registered mobile number.</p><label id="profileChangeValueLabel">New value</label><input id="profileChangeValue"><div id="profileChangeOtpBox" style="display:none"><label>OTP</label><input id="profileChangeOtp" maxlength="6" inputmode="numeric" placeholder="123456"><p style="font-size:10px;color:#777">OTP sent to your registered mobile. Prototype OTP: <b>123456</b></p></div><button id="profileChangeSendBtn" class="btn dark" type="button" onclick="sendProfileChangeOtp()">Send OTP to Mobile</button><button id="profileChangeVerifyBtn" class="btn dark" type="button" style="display:none;margin-top:8px" onclick="verifyProfileChangeOtp()">Verify & Update</button></div></div><!-- Common My Account floating control -->
 <div id="accountFab" class="account-fab" aria-label="My Account">
   <button id="accountFabBtn" class="account-fab-btn" type="button" title="My Account">
     <span id="accountFabAvatar" class="account-fab-avatar">◯</span>

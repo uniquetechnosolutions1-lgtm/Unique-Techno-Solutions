@@ -1569,3 +1569,30 @@ body.booking-modal-open{overflow:hidden}
 .auth-otp-step .auth-demo-note{font-size:10px!important;margin-top:12px!important}
 @media(max-width:850px){.auth-login-layout{grid-template-columns:1fr}.auth-login-layout .login-right{display:none}.auth-panel-left{padding:42px 7vw}.auth-panel-left .login-left .brand{margin-bottom:30px}}
 @media(max-width:520px){.auth-panel-left{padding:32px 20px}.auth-panel-left .brand{margin-bottom:30px}.auth-tabs{margin-top:20px}.login h1{font-size:42px}.phone select{width:68px}}
+
+
+/* Safe floating notification bell: visible only after customer authentication. */
+.notification-fab{display:none;position:fixed;right:24px;top:18px;z-index:1200;font-family:inherit}
+.customer-auth .notification-fab{display:block}
+.notification-fab-btn{width:48px;height:48px;border:1px solid #dbe5ef;border-radius:15px;background:#fff;box-shadow:0 10px 28px rgba(12,35,60,.14);cursor:pointer;display:grid;place-items:center;position:relative;transition:transform .2s,box-shadow .2s}
+.notification-fab-btn:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(12,35,60,.18)}
+.notification-bell-icon{font-size:21px;line-height:1}
+.notification-fab-count{display:none;position:absolute;right:-5px;top:-5px;min-width:19px;height:19px;padding:0 5px;border-radius:99px;background:#b42318;color:#fff;border:2px solid #fff;font-size:9px;font-weight:900;align-items:center;justify-content:center}
+.notification-fab-count.has-count{display:flex}
+.floating-notification-panel{display:none;position:absolute;right:0;top:58px;width:350px;max-width:calc(100vw - 30px);background:#fff;border:1px solid #dfe7ef;border-radius:17px;box-shadow:0 22px 55px rgba(13,37,62,.18);overflow:hidden}
+.floating-notification-panel.open{display:block}
+.floating-notification-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 17px;border-bottom:1px solid #edf1f5}
+.floating-notification-head h3{margin:2px 0 0;font-size:17px;color:#12243e}
+.floating-notification-read{border:0;background:transparent;color:#1769e8;font-size:9px;font-weight:900;cursor:pointer;white-space:nowrap}
+.floating-notification-list{max-height:440px;overflow:auto}
+.floating-notification-item{width:100%;display:flex;gap:10px;padding:13px 15px;text-align:left;border:0;border-bottom:1px solid #eef2f5;background:#fff;cursor:pointer}
+.floating-notification-item:hover{background:#f7fbff}
+.floating-notification-item.unread{background:#f4f9ff}
+.floating-notification-dot{width:8px;height:8px;border-radius:50%;background:#b8c3ce;margin-top:5px;flex:0 0 8px}
+.floating-notification-item.unread .floating-notification-dot{background:#1769e8;box-shadow:0 0 0 3px #e4f0ff}
+.floating-notification-copy{display:flex;min-width:0;flex-direction:column;gap:3px}
+.floating-notification-copy b{font-size:10px;color:#172a43}
+.floating-notification-copy span{font-size:9px;line-height:1.45;color:#6d7c8d}
+.floating-notification-copy small{font-size:8px;color:#9aa6b2}
+.floating-notification-empty{padding:38px 18px;text-align:center;color:#7b8999;font-size:10px}
+@media(max-width:700px){.notification-fab{right:14px;top:12px}.notification-fab-btn{width:44px;height:44px}.floating-notification-panel{right:-4px;top:53px;width:calc(100vw - 28px)}}
