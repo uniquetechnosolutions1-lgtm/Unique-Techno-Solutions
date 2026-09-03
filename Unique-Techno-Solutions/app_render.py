@@ -350,6 +350,29 @@ class Handler(BaseHTTPRequestHandler):
                 rows=c.execute('SELECT * FROM notifications WHERE customer_id=? ORDER BY id DESC LIMIT 50',(cid,)).fetchall()
                 return send_json(self,200,[dict(r) for r in rows])
 
+            if p.startswith('/api/customer/') and p.endswith('/notifications/read-all'):
+                session_cid=require_customer(self)
+                if not session_cid: return
+                try: cid=int(p.split('/')[3])
+                except Exception: return send_json(self,400,{'error':'Invalid customer id'})
+                if cid != session_cid: return send_json(self,403,{'error':'Customer access denied'})
+                c.execute('UPDATE notifications SET is_read=1 WHERE customer_id=?',(cid,))
+                c.commit()
+                return send_json(self,200,{'ok':True,'updated':c.rowcount})
+
+            if p.startswith('/api/customer/') and p.endswith('/notifications/read'):
+                session_cid=require_customer(self)
+                if not session_cid: return
+                try: cid=int(p.split('/')[3])
+                except Exception: return send_json(self,400,{'error':'Invalid customer id'})
+                if cid != session_cid: return send_json(self,403,{'error':'Customer access denied'})
+                nid=d.get('notification_id')
+                try: nid=int(nid)
+                except Exception: return send_json(self,400,{'error':'Invalid notification id'})
+                c.execute('UPDATE notifications SET is_read=1 WHERE id=? AND customer_id=?',(nid,cid))
+                c.commit()
+                return send_json(self,200,{'ok':True,'updated':c.rowcount})
+
             if p.startswith('/api/customer/') and p.endswith('/support'):
                 session_cid=require_customer(self)
                 if not session_cid: return
