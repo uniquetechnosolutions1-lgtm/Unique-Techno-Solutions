@@ -317,19 +317,6 @@ class Handler(BaseHTTPRequestHandler):
                                   WHERE b.customer_id=?
                                   ORDER BY b.id DESC''',(cid,)).fetchall()
                 return send_json(self,200,[dict(r) for r in rows])
-            if p.startswith('/api/customer/') and p.endswith('/addresses'):
-                session_cid=require_customer(self)
-                if not session_cid: return
-                try: cid=int(p.split('/')[3])
-                except Exception: return send_json(self,400,{'error':'Invalid customer id'})
-                if cid != session_cid: return send_json(self,403,{'error':'Customer access denied'})
-                c.execute('''CREATE TABLE IF NOT EXISTS customer_addresses(id INTEGER PRIMARY KEY AUTOINCREMENT,customer_id INTEGER NOT NULL,label TEXT NOT NULL DEFAULT 'Default Address',area TEXT DEFAULT '',pincode TEXT DEFAULT '',address TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL,is_default INTEGER NOT NULL DEFAULT 0)''')
-                rows=[dict(x) for x in c.execute('SELECT * FROM customer_addresses WHERE customer_id=? ORDER BY is_default DESC,id DESC',(cid,)).fetchall()]
-                if not rows:
-                    r=c.execute('SELECT * FROM customers WHERE id=?',(cid,)).fetchone()
-                    if r and (r['address'] or r['area']):
-                        nowv=now(); c.execute("INSERT INTO customer_addresses(customer_id,label,area,pincode,address,created_at,updated_at,is_default) VALUES(?,?,?,?,?,?,?,1)",(cid,'Default Address',r['area'] or '', '',r['address'] or '',nowv,nowv)); c.commit(); rows=[dict(x) for x in c.execute('SELECT * FROM customer_addresses WHERE customer_id=? ORDER BY is_default DESC,id DESC',(cid,)).fetchall()]
-                return send_json(self,200,rows)
             if p.startswith('/api/customer/') and p.endswith('/profile'):
                 session_cid=require_customer(self)
                 if not session_cid: return
@@ -476,18 +463,6 @@ class Handler(BaseHTTPRequestHandler):
                 cur=c.execute('INSERT INTO customers(name,phone,area,email,address,created_at) VALUES(?,?,?,?,?,?)',(name,phone,'',email,address,now()))
                 cid=cur.lastrowid;c.commit()
                 return send_json(self,201,{'customer':dict(c.execute('SELECT * FROM customers WHERE id=?',(cid,)).fetchone())}, set_cookie=customer_cookie(cid))
-            if p.startswith('/api/customer/') and p.endswith('/addresses'):
-                session_cid=require_customer(self)
-                if not session_cid: return
-                try: cid=int(p.split('/')[3])
-                except Exception: return send_json(self,400,{'error':'Invalid customer id'})
-                if cid != session_cid: return send_json(self,403,{'error':'Customer access denied'})
-                c.execute('''CREATE TABLE IF NOT EXISTS customer_addresses(id INTEGER PRIMARY KEY AUTOINCREMENT,customer_id INTEGER NOT NULL,label TEXT NOT NULL DEFAULT 'Default Address',area TEXT DEFAULT '',pincode TEXT DEFAULT '',address TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL,is_default INTEGER NOT NULL DEFAULT 0)''')
-                address=str(d.get('address','')).strip(); area=str(d.get('area','')).strip(); pincode=str(d.get('pincode','')).strip(); label=str(d.get('label','Default Address')).strip() or 'Address'; is_default=1 if d.get('is_default') else 0
-                if not address:return send_json(self,400,{'error':'Full address is required'})
-                if pincode and not pincode.isdigit() or (pincode and len(pincode)!=6):return send_json(self,400,{'error':'Enter a valid 6-digit pincode'})
-                if is_default:c.execute('UPDATE customer_addresses SET is_default=0 WHERE customer_id=?',(cid,))
-                nowv=now(); cur=c.execute("INSERT INTO customer_addresses(customer_id,label,area,pincode,address,created_at,updated_at,is_default) VALUES(?,?,?,?,?,?,?,?)",(cid,label,area,pincode,address,nowv,nowv,is_default)); c.commit(); return send_json(self,200,dict(c.execute('SELECT * FROM customer_addresses WHERE id=?',(cur.lastrowid,)).fetchone()))
             if p.startswith('/api/customer/') and p.endswith('/profile-change-otp'):
                 session_cid=require_customer(self)
                 if not session_cid: return
@@ -726,21 +701,6 @@ class Handler(BaseHTTPRequestHandler):
     def do_PUT(self):
         p=urlparse(self.path).path; d=read_json(self); c=conn()
         try:
-            if p.startswith('/api/customer/') and '/addresses/' in p:
-                session_cid=require_customer(self)
-                if not session_cid:return
-                parts=p.split('/')
-                try: cid=int(parts[3]); aid=int(parts[5])
-                except Exception:return send_json(self,400,{'error':'Invalid address'})
-                if cid!=session_cid:return send_json(self,403,{'error':'Customer access denied'})
-                c.execute('''CREATE TABLE IF NOT EXISTS customer_addresses(id INTEGER PRIMARY KEY AUTOINCREMENT,customer_id INTEGER NOT NULL,label TEXT NOT NULL DEFAULT 'Default Address',area TEXT DEFAULT '',pincode TEXT DEFAULT '',address TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL,is_default INTEGER NOT NULL DEFAULT 0)''')
-                r=c.execute('SELECT * FROM customer_addresses WHERE id=? AND customer_id=?',(aid,cid)).fetchone()
-                if not r:return send_json(self,404,{'error':'Address not found'})
-                address=str(d.get('address',r['address'])).strip(); area=str(d.get('area',r['area'] or '')).strip(); pincode=str(d.get('pincode',r['pincode'] or '')).strip(); label=str(d.get('label',r['label'] or 'Address')).strip() or 'Address'; is_default=1 if d.get('is_default') else 0
-                if not address:return send_json(self,400,{'error':'Full address is required'})
-                if pincode and (not pincode.isdigit() or len(pincode)!=6):return send_json(self,400,{'error':'Enter a valid 6-digit pincode'})
-                if is_default:c.execute('UPDATE customer_addresses SET is_default=0 WHERE customer_id=?',(cid,))
-                c.execute('UPDATE customer_addresses SET label=?,area=?,pincode=?,address=?,updated_at=?,is_default=? WHERE id=? AND customer_id=?',(label,area,pincode,address,now(),is_default,aid,cid)); c.commit(); return send_json(self,200,dict(c.execute('SELECT * FROM customer_addresses WHERE id=?',(aid,)).fetchone()))
             if p.startswith('/api/customer/') and p.endswith('/profile-change-otp'):
                 session_cid=require_customer(self)
                 if not session_cid: return
