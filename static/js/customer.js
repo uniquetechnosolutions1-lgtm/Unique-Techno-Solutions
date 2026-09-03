@@ -431,6 +431,34 @@ function openUpcomingBooking(code){bookingCode=decodeURIComponent(code);show('tr
 async function loadProfile(){if(!customer?.id)return;try{customer=await api('/api/customer/'+customer.id+'/profile');renderProfile()}catch(e){renderProfile()}}
 function renderProfile(){const n=(customer.name||'C').split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase();document.getElementById('profileAvatar').textContent=n;document.getElementById('profileWelcome').textContent='Welcome, '+(customer.name||'Customer');document.getElementById('pName').value=customer.name||'';document.getElementById('pPhone').value=customer.phone||'';document.getElementById('pEmail').value=customer.email||'';document.getElementById('pArea').value=customer.area||'';document.getElementById('pAddress').value=customer.address||'';updateAccountControl()}
 let profileChangeMode='';
+let profileChangeResendTimer=null;
+let profileChangeResendSeconds=0;
+function startProfileChangeResendCountdown(){
+  clearInterval(profileChangeResendTimer);
+  const btn=document.getElementById('profileChangeResendBtn');
+  const timer=document.getElementById('profileChangeResendTimer');
+  profileChangeResendSeconds=60;
+  if(btn){btn.disabled=true;btn.innerHTML='Resend OTP in <span id=\"profileChangeResendTimer\">60</span>s';}
+  profileChangeResendTimer=setInterval(()=>{
+    profileChangeResendSeconds--;
+    const t=document.getElementById('profileChangeResendTimer');
+    if(t)t.textContent=profileChangeResendSeconds;
+    if(profileChangeResendSeconds<=0){
+      clearInterval(profileChangeResendTimer); profileChangeResendTimer=null;
+      const b=document.getElementById('profileChangeResendBtn');
+      if(b){b.disabled=false;b.textContent='Resend OTP →';}
+    }
+  },1000);
+}
+function resetProfileChangeResend(){
+  clearInterval(profileChangeResendTimer); profileChangeResendTimer=null;
+  const b=document.getElementById('profileChangeResendBtn');
+  if(b){b.disabled=true;b.innerHTML='Resend OTP in <span id=\"profileChangeResendTimer\">60</span>s';}
+}
+async function resendProfileChangeOtp(){
+  if(profileChangeResendSeconds>0)return;
+  await sendProfileChangeOtp(true);
+}
 
 function openProfileChange(mode){
   profileChangeMode=mode;
@@ -450,16 +478,20 @@ function openProfileChange(mode){
   otpBox.style.display='none';
   sendBtn.disabled=false;
   sendBtn.textContent='Send OTP to Mobile →';
+  const resendBtn=document.getElementById('profileChangeResendBtn');
+  if(resendBtn){resendBtn.style.display='none';resendBtn.disabled=true;resendBtn.innerHTML='Resend OTP in <span id=\"profileChangeResendTimer\">60</span>s';}
+  clearInterval(profileChangeResendTimer); profileChangeResendTimer=null; profileChangeResendSeconds=0;
   document.getElementById('profileChangeOtp').value='';
   const m=document.getElementById('profileChangeModal'); m.style.display='flex'; m.setAttribute('aria-hidden','false');
   setTimeout(()=>input.focus(),80);
 }
 
 function closeProfileChange(){
+  clearInterval(profileChangeResendTimer); profileChangeResendTimer=null;
   const m=document.getElementById('profileChangeModal'); if(m){m.style.display='none';m.setAttribute('aria-hidden','true');}
 }
 
-async function sendProfileChangeOtp(){
+async function sendProfileChangeOtp(isResend=false){
   try{
     if(!customer?.id)throw Error('Please login again.');
     const value=document.getElementById('profileChangeValue').value.trim();
@@ -469,6 +501,8 @@ async function sendProfileChangeOtp(){
     document.getElementById('profileChangeOtpBox').style.display='block';
     document.getElementById('profileChangeSendBtn').textContent='OTP Sent ✓';
     document.getElementById('profileChangeSendBtn').disabled=true;
+    document.getElementById('profileChangeResendBtn').style.display='block';
+    startProfileChangeResendCountdown();
     document.getElementById('profileChangeInfo').textContent='OTP has been sent to your registered mobile number '+(customer.phone||'')+'.';
     toast(d.message||'OTP sent to your mobile number.');
     setTimeout(()=>document.getElementById('profileChangeOtp')?.focus(),80);
